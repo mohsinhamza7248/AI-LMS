@@ -1,3 +1,4 @@
+import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { Course } from '@/types/database.types'
 
@@ -7,7 +8,7 @@ export async function getCoursesByTenant(tenantId: string, options?: {
   offset?: number
   published?: boolean
 }) {
-  const supabase = await createClient()
+  const supabase = createAdminClient() as any
   let query = supabase
     .from('courses')
     .select(`
@@ -35,7 +36,7 @@ export async function getCoursesByTenant(tenantId: string, options?: {
 }
 
 export async function getCourseById(id: string) {
-  const supabase = await createClient()
+  const supabase = createAdminClient() as any
   const { data } = await supabase
     .from('courses')
     .select(`
