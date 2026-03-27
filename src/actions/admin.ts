@@ -1,6 +1,5 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
 import { createAdminClient } from '@/lib/supabase/admin'
 import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
@@ -115,7 +114,7 @@ export async function getStudentList() {
 }
 
 export async function getRecentActivity() {
-  const admin = await checkAdmin()
+  await checkAdmin()
   const supabase = createAdminClient() as any
 
   // Get recent enrollments with user and course info

@@ -1,19 +1,18 @@
 import { Navbar } from '@/components/navigation/Navbar'
 import { Footer } from '@/components/navigation/Footer'
 import Link from 'next/link'
-import { ArrowRight, Sparkles, Zap, ShieldCheck, Star } from 'lucide-react'
+import { Sparkles, Zap, ShieldCheck } from 'lucide-react'
 import { getActiveTenant } from '@/lib/tenant'
 import { getFeaturedCourses } from '@/services/course.service'
 import { TestimonialCarousel } from '@/components/ui/testimonial-carousel'
 import { FeaturedCoursesGrid } from '@/components/courses/FeaturedCoursesGrid'
-import { useRouter } from 'next/router'
 
 export default async function HomePage() {
   const tenant = await getActiveTenant()
   let featuredCourses: any[] = []
 
   if (tenant) {
-    featuredCourses = await getFeaturedCourses(tenant.id, 3)
+    await getFeaturedCourses(tenant.id, 3)
   }
 
   // Fallback dummy data if no courses are published yet

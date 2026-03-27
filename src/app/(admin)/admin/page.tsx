@@ -43,7 +43,7 @@ export default async function AdminDashboard() {
           <div className="lg:col-span-2 space-y-8">
 
             <div className="rounded-3xl border bg-card p-8 shadow-sm">
-               <h2 className="text-xl font-bold mb-6">Recent Activity</h2>
+               <h2 className="text-xl font-bold italic font-serif">&quot;Believe you can and you&apos;re halfway there.&quot;</h2>
                <div className="space-y-4">
                  {activity.length === 0 ? (
                    <p className="text-muted-foreground text-sm">No recent activity.</p>
