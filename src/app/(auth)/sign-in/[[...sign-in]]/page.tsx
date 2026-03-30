@@ -2,13 +2,15 @@
 
 import * as React from 'react'
 import { useSignIn, useSignUp } from '@clerk/nextjs'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { ArrowLeft, ArrowRight, Loader2, Phone, ShieldCheck } from 'lucide-react'
 
 export default function SignInPage() {
   const { isLoaded: isSignInLoaded, signIn, setActive: setSignInActive } = useSignIn()
   const { isLoaded: isSignUpLoaded, signUp, setActive: setSignUpActive } = useSignUp()
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const redirectUrl = searchParams.get('redirect_url') || '/dashboard'
 
   const [phone, setPhone] = React.useState('')
   const [code, setCode] = React.useState('')
@@ -87,7 +89,7 @@ export default function SignInPage() {
 
         if (result.status === 'complete') {
           await setSignInActive({ session: result.createdSessionId })
-          router.push('/dashboard')
+          router.push(redirectUrl)
         } else {
           setError('Incomplete verification step.')
         }
@@ -99,7 +101,7 @@ export default function SignInPage() {
 
         if (result.status === 'complete') {
           await setSignUpActive({ session: result.createdSessionId })
-          router.push('/dashboard')
+          router.push(redirectUrl)
         } else {
           setError('Incomplete verification step.')
         }

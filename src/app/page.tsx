@@ -12,12 +12,13 @@ export default async function HomePage() {
   let featuredCourses: any[] = []
 
   if (tenant) {
-    await getFeaturedCourses(tenant.id, 3)
+    featuredCourses = await getFeaturedCourses(tenant.id, 3)
   }
 
   // Fallback dummy data if no courses are published yet
-  const displayCourses = [
+  const fallbackCourses = [
     {
+      id: 'next-gen-saas',
       title: 'Next-Gen SaaS Mastery (Next.js 15)',
       instructor: 'Parth Sharma',
       rating: 4.9,
@@ -26,6 +27,7 @@ export default async function HomePage() {
       youtube_url: 'https://www.youtube.com/watch?v=XUkNR-JfHwo'
     },
     {
+      id: 'advanced-physics',
       title: 'Advanced Physics: JEE/NEET 2026',
       instructor: 'Dr. Vivek Kumar',
       rating: 4.8,
@@ -34,6 +36,7 @@ export default async function HomePage() {
       youtube_url: 'https://www.youtube.com/watch?v=NWe0vE3P6cM'
     },
     {
+      id: 'ai-engineering',
       title: 'AI Engineering & Prompt Design',
       instructor: 'Sarah Jenkins',
       rating: 5.0,
@@ -42,6 +45,19 @@ export default async function HomePage() {
       youtube_url: 'https://www.youtube.com/watch?v=_ZvnD73m40o'
     }
   ];
+
+  // Map database courses to the format expected by FeaturedCoursesGrid
+  const mappedCourses = featuredCourses.map((course: any) => ({
+    id: course.id,
+    title: course.title,
+    instructor: course.tutors?.users?.name || 'Expert Instructor',
+    rating: 4.9, // Default rating
+    students: '1.2k+', // Default student count
+    image: course.thumbnail_url || 'https://images.unsplash.com/photo-1555066931-4365d14bab8c?q=80&w=2070&auto=format&fit=crop',
+    youtube_url: '' // Placeholder for now as database doesn't have youtube_url
+  }));
+
+  const displayCourses = mappedCourses.length > 0 ? mappedCourses : fallbackCourses;
 
   return (
     <div className="relative min-h-screen pt-16">

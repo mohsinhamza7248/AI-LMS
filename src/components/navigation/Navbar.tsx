@@ -33,10 +33,9 @@ export function Navbar() {
         <div className="hidden md:flex items-center gap-8 text-sm font-bold tracking-tight uppercase">
           {(!userId || role === 'student') && (
             <>
+              {userId && <Link href="/my-learning" className="transition-colors hover:text-primary">My Learning</Link>}
               <Link href="/courses" className="transition-colors hover:text-primary">All Courses</Link>
-              {/* <Link href="/categories" className="transition-colors hover:text-primary">Categories</Link> */}
               <Link href="/ai-tutor" className="transition-colors hover:text-primary">AI Tutor</Link>
-              {/* <Link href="/voice-ai" className="transition-colors hover:text-primary">Voice AI</Link> */}
             </>
           )}
 

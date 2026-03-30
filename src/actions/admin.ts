@@ -282,7 +282,6 @@ export async function getCourseContent(courseId: string) {
     .eq('course_id', courseId)
     .order('order_index', { ascending: true }) as any
 
-  if (error) throw new Error(error.message)
   return (data ?? []) as { id: string; title: string; url: string; order_index: number; created_at: string }[]
 }
 

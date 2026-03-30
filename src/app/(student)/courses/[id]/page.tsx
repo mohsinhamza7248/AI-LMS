@@ -4,7 +4,7 @@ import { Play, FileText, CheckCircle, ArrowRight, ShieldCheck, Globe } from 'luc
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { EnrollButton } from '@/components/courses/EnrollButton'
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { auth } from '@clerk/nextjs/server'
 
 export default async function CourseDetailPage({ params }: { params: Promise<{ id: string }> }) {
@@ -16,7 +16,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
   const { userId } = await auth()
   let isEnrolled = false
   if (userId) {
-    const supabase = await createClient()
+    const supabase = createAdminClient()
     const { data: dbUser } = await supabase.from('users').select('id').eq('clerk_id', userId).single() as any
     if (dbUser) {
       const { data: enrollment } = await supabase.from('enrollments').select('id').eq('course_id', id).eq('user_id', dbUser.id).single() as any
@@ -53,13 +53,18 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
 
             {/* Video Player */}
             {(() => {
-              const firstVideo = course.course_content?.find((item: any) => item.type === 'video') || course.course_content?.[0]
+              const firstVideo = course.course_content?.[0]
               if (firstVideo?.url) {
                 const getYouTubeId = (url: string) => {
                   const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/)
                   return match ? match[1] : null
                 }
+                const getVimeoId = (url: string) => {
+                  const match = url.match(/(?:vimeo\.com\/|player\.vimeo\.com\/video\/)(\d+)/)
+                  return match ? match[1] : null
+                }
                 const ytId = getYouTubeId(firstVideo.url)
+                const vimeoId = getVimeoId(firstVideo.url)
 
                 return (
                   <div className="relative aspect-video w-full overflow-hidden rounded-3xl bg-black shadow-2xl border-4 border-card">
@@ -68,6 +73,13 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
                         className="h-full w-full border-0"
                         src={`https://www.youtube.com/embed/${ytId}?rel=0`}
                         allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                        allowFullScreen
+                      ></iframe>
+                    ) : vimeoId ? (
+                      <iframe
+                        className="h-full w-full border-0"
+                        src={`https://player.vimeo.com/video/${vimeoId}`}
+                        allow="autoplay; fullscreen; picture-in-picture"
                         allowFullScreen
                       ></iframe>
                     ) : (
@@ -116,7 +128,7 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
                     <div key={item.id} className="flex items-center justify-between p-6 hover:bg-muted/30 transition-colors">
                       <div className="flex items-center gap-4">
                         <div className="p-2 rounded-lg bg-primary/10 text-primary">
-                          {item.type === 'video' ? <Play className="h-5 w-5" /> : <FileText className="h-5 w-5" />}
+                          <Play className="h-5 w-5" />
                         </div>
                         <span className="font-bold">{item.title}</span>
                       </div>

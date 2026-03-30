@@ -137,6 +137,8 @@ export default function EditCourseForm({
   // ── Panel C: Lectures ─────────────────────────────────
   const [lectures, setLectures] = useState<Lecture[]>(initialContent)
   const [newLectureTitle, setNewLectureTitle] = useState('')
+  const [videoSourceType, setVideoSourceType] = useState<'upload' | 'link'>('upload')
+  const [externalUrl, setExternalUrl] = useState('')
   const [lectureFile, setLectureFile] = useState<File | null>(null)
   const [lectureProgress, setLectureProgress] = useState(0)
   const [lectureUploading, setLectureUploading] = useState(false)
@@ -218,14 +220,26 @@ export default function EditCourseForm({
   async function handleAddLecture(e: React.FormEvent) {
     e.preventDefault()
     if (!newLectureTitle.trim()) return
-    if (!lectureFile) { setLectureError('Please select a video file'); return }
-
-    setLectureError('')
-    setLectureUploading(true)
-    setLectureProgress(0)
+    
+    let url = ''
+    if (videoSourceType === 'upload') {
+      if (!lectureFile) { setLectureError('Please select a video file'); return }
+      setLectureError('')
+      setLectureUploading(true)
+      setLectureProgress(0)
+      try {
+        url = await uploadToCloudinary(lectureFile, 'video', setLectureProgress)
+      } catch (err: any) {
+        setLectureError(err.message || 'Upload failed')
+        setLectureUploading(false)
+        return
+      }
+    } else {
+      if (!externalUrl.trim()) { setLectureError('Please provide a video URL'); return }
+      url = externalUrl.trim()
+    }
 
     try {
-      const url = await uploadToCloudinary(lectureFile, 'video', setLectureProgress)
       const order_index = lectures.length
       await addLecture(course.id, { title: newLectureTitle.trim(), url, order_index })
 
@@ -242,10 +256,11 @@ export default function EditCourseForm({
       ])
       setNewLectureTitle('')
       setLectureFile(null)
+      setExternalUrl('')
       if (lectureFileRef.current) lectureFileRef.current.value = ''
       router.refresh()
     } catch (err: any) {
-      setLectureError(err.message || 'Upload failed')
+      setLectureError(err.message || 'Failed to add lecture')
     } finally {
       setLectureUploading(false)
       setLectureProgress(0)
@@ -514,7 +529,7 @@ export default function EditCourseForm({
 
             {/* ── Add Lecture Form ─────────────────── */}
             <div className="border-t pt-6">
-              <h3 className="text-sm font-bold mb-4">Add New Lecture</h3>
+              <h3 className="text-sm font-bold mb-4 text-primary">Add New Lecture (Source Enabled)</h3>
               <form onSubmit={handleAddLecture} className="space-y-4">
                 <div className="space-y-1.5">
                   <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
@@ -529,29 +544,74 @@ export default function EditCourseForm({
                   />
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Video File
-                  </label>
-                  <label
-                    htmlFor="lecture-video"
-                    className={`flex items-center gap-3 h-12 w-full rounded-xl border border-dashed border-muted-foreground/40 bg-background px-4 text-sm text-muted-foreground cursor-pointer hover:border-primary hover:bg-muted/20 transition-colors ${
-                      lectureUploading ? 'opacity-60 pointer-events-none' : ''
-                    }`}
-                  >
-                    <VideoIcon className="h-4 w-4 shrink-0" />
-                    <span className="truncate">
-                      {lectureFile ? lectureFile.name : 'Choose video (.mp4, .mov, .webm…)'}
-                    </span>
-                  </label>
-                  <input
-                    ref={lectureFileRef}
-                    id="lecture-video"
-                    type="file"
-                    accept="video/*"
-                    className="hidden"
-                    onChange={(e) => setLectureFile(e.target.files?.[0] ?? null)}
-                  />
+                <div className="space-y-4">
+                  <div className="flex p-1 bg-muted rounded-xl w-fit">
+                    <button
+                      type="button"
+                      onClick={() => setVideoSourceType('upload')}
+                      className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                        videoSourceType === 'upload'
+                          ? 'bg-background shadow-sm text-primary'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      Upload Video
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setVideoSourceType('link')}
+                      className={`px-4 py-1.5 text-xs font-bold rounded-lg transition-all ${
+                        videoSourceType === 'link'
+                          ? 'bg-background shadow-sm text-primary'
+                          : 'text-muted-foreground hover:text-foreground'
+                      }`}
+                    >
+                      S3 / External Link
+                    </button>
+                  </div>
+
+                  {videoSourceType === 'upload' ? (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Video File
+                      </label>
+                      <label
+                        htmlFor="lecture-video"
+                        className={`flex items-center gap-3 h-12 w-full rounded-xl border border-dashed border-muted-foreground/40 bg-background px-4 text-sm text-muted-foreground cursor-pointer hover:border-primary hover:bg-muted/20 transition-colors ${
+                          lectureUploading ? 'opacity-60 pointer-events-none' : ''
+                        }`}
+                      >
+                        <VideoIcon className="h-4 w-4 shrink-0" />
+                        <span className="truncate">
+                          {lectureFile ? lectureFile.name : 'Choose video (.mp4, .mov, .webm…)'}
+                        </span>
+                      </label>
+                      <input
+                        ref={lectureFileRef}
+                        id="lecture-video"
+                        type="file"
+                        accept="video/*"
+                        className="hidden"
+                        onChange={(e) => setLectureFile(e.target.files?.[0] ?? null)}
+                      />
+                    </div>
+                  ) : (
+                    <div className="space-y-1.5">
+                      <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
+                        Video URL (S3, YouTube, etc.)
+                      </label>
+                      <input
+                        type="url"
+                        value={externalUrl}
+                        onChange={(e) => setExternalUrl(e.target.value)}
+                        placeholder="https://psa-bucket.s3.amazonaws.com/video.mp4"
+                        className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
+                      />
+                      <p className="text-[10px] text-muted-foreground italic">
+                        Supports direct links (MP4, WebM) and YouTube/Vimeo embeds.
+                      </p>
+                    </div>
+                  )}
                 </div>
 
                 {lectureUploading && (
@@ -569,7 +629,12 @@ export default function EditCourseForm({
 
                 <button
                   type="submit"
-                  disabled={lectureUploading || !newLectureTitle.trim() || !lectureFile}
+                  disabled={
+                    lectureUploading || 
+                    !newLectureTitle.trim() || 
+                    (videoSourceType === 'upload' && !lectureFile) ||
+                    (videoSourceType === 'link' && !externalUrl.trim())
+                  }
                   className="flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow transition-transform hover:scale-[1.02] active:scale-95 disabled:opacity-60"
                 >
                   {lectureUploading ? (
@@ -577,7 +642,7 @@ export default function EditCourseForm({
                   ) : (
                     <UploadCloud className="h-4 w-4" />
                   )}
-                  {lectureUploading ? 'Uploading…' : 'Upload & Add Lecture'}
+                  {lectureUploading ? 'Uploading…' : videoSourceType === 'upload' ? 'Upload & Add Lecture' : 'Save & Add Lecture'}
                 </button>
               </form>
             </div>

@@ -82,3 +82,41 @@ export async function deleteCourse(id: string) {
 export async function getFeaturedCourses(tenantId: string, limit = 6) {
   return getCoursesByTenant(tenantId, { limit, published: true })
 }
+
+export async function getEnrolledCourses(userId: string) {
+  const supabase = createAdminClient() as any
+  const { data, error } = await supabase
+    .from('enrollments')
+    .select(`
+      id,
+      progress,
+      enrolled_at,
+      courses (
+        id,
+        title,
+        thumbnail_url,
+        description,
+        tutors (
+          users (
+            name
+          )
+        )
+      )
+    `)
+    .eq('user_id', userId)
+    .order('enrolled_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching enrolled courses:', error)
+    return []
+  }
+
+  return data.map((item: any) => ({
+    id: item.courses.id,
+    title: item.courses.title,
+    thumbnail_url: item.courses.thumbnail_url,
+    instructor: item.courses.tutors?.users?.name || 'Expert Instructor',
+    progress: item.progress || 0,
+    enrolledAt: item.enrolled_at
+  }))
+}
