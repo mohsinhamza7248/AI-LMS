@@ -5,10 +5,15 @@ import Link from 'next/link'
 import { UserButton, SignedIn, SignedOut, useAuth } from '@clerk/nextjs'
 import { getUserRole } from '@/actions/user'
 import { ModeToggle } from '@/components/mode-toggle'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
+import { BookOpen, LayoutDashboard, PlusCircle, GraduationCap, Menu, X } from 'lucide-react'
 
 export function Navbar() {
   const { isLoaded, userId } = useAuth()
   const [role, setRole] = useState<string>('student')
+  const [scrolled, setScrolled] = useState(false)
+  const [mobileOpen, setMobileOpen] = useState(false)
 
   useEffect(() => {
     async function fetchRole() {
@@ -20,65 +25,127 @@ export function Navbar() {
     if (isLoaded) fetchRole()
   }, [userId, isLoaded])
 
+  useEffect(() => {
+    const handleScroll = () => setScrolled(window.scrollY > 12)
+    window.addEventListener('scroll', handleScroll, { passive: true })
+    return () => window.removeEventListener('scroll', handleScroll)
+  }, [])
+
+  const navLinks = () => {
+    if (!userId || role === 'student') {
+      return [
+        { href: '/courses', label: 'Courses', icon: BookOpen },
+        { href: '/ai-tutor', label: 'AI Tutor', icon: GraduationCap },
+      ]
+    }
+    if (role === 'tutor') {
+      return [
+        { href: '/tutor', label: 'Dashboard', icon: LayoutDashboard },
+        { href: '/tutor/courses/create', label: 'Create Course', icon: PlusCircle },
+      ]
+    }
+    if (role === 'admin' || role === 'super_admin') {
+      return [
+        { href: '/admin', label: 'Dashboard', icon: LayoutDashboard },
+        { href: '/admin/courses', label: 'Courses', icon: BookOpen },
+      ]
+    }
+    return []
+  }
+
+  const links = navLinks()
+
   return (
-    <nav className="fixed top-0 z-50 w-full border-b bg-background/80 backdrop-blur-md">
-      <div className="container mx-auto flex h-16 items-center justify-between px-4">
-        <Link href="/" className="flex items-center gap-2 font-black text-2xl transition-colors hover:opacity-80">
-          <div className="flex h-16 w-32 items-center justify-center overflow-hidden">
-            <img src="/logo.png" alt="Logo" className="h-full w-full object-contain" />
+    <>
+      <nav
+        className={cn(
+          'fixed top-0 z-50 w-full transition-all duration-300',
+          scrolled
+            ? 'border-b border-border/60 bg-background/80 backdrop-blur-xl shadow-sm'
+            : 'bg-transparent'
+        )}
+      >
+        <div className="container mx-auto flex h-16 items-center justify-between px-4 lg:px-6">
+          {/* Logo */}
+          <Link href="/" className="flex items-center gap-2 shrink-0 transition-opacity hover:opacity-80">
+            <div className="flex h-14 w-28 items-center justify-center overflow-hidden">
+              <img src="/logo.png" alt="Logo" className="h-full w-full object-contain" />
+            </div>
+          </Link>
+
+          {/* Desktop Links */}
+          <div className="hidden md:flex items-center gap-1">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                className="flex items-center gap-1.5 rounded-lg px-3 py-2 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                <link.icon className="h-4 w-4" />
+                {link.label}
+              </Link>
+            ))}
           </div>
-        </Link>
 
-        {/* Dynamic Links Based on Role */}
-        <div className="hidden md:flex items-center gap-8 text-sm font-bold tracking-tight uppercase">
-          {(!userId || role === 'student') && (
-            <>
-              <Link href="/courses" className="transition-colors hover:text-primary">All Courses</Link>
-              {/* <Link href="/categories" className="transition-colors hover:text-primary">Categories</Link> */}
-              <Link href="/ai-tutor" className="transition-colors hover:text-primary">AI Tutor</Link>
-              {/* <Link href="/voice-ai" className="transition-colors hover:text-primary">Voice AI</Link> */}
-            </>
-          )}
+          {/* Right side */}
+          <div className="flex items-center gap-3">
+            <ModeToggle />
+            <SignedOut>
+              <Link
+                href="/sign-in"
+                className="hidden sm:inline-flex items-center gap-2 rounded-full bg-primary px-5 py-2 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:bg-primary/90 hover:shadow-lg hover:shadow-primary/30 active:scale-95"
+              >
+                Sign In
+              </Link>
+            </SignedOut>
+            <SignedIn>
+              <Link
+                href="/dashboard"
+                className="hidden md:inline-flex items-center gap-1.5 rounded-full bg-primary/10 px-4 py-2 text-sm font-semibold text-primary transition-colors hover:bg-primary/15"
+              >
+                <LayoutDashboard className="h-4 w-4" />
+                Portal
+              </Link>
+              <UserButton afterSignOutUrl="/" />
+            </SignedIn>
 
-          {role === 'tutor' && (
-            <>
-              <Link href="/tutor" className="transition-colors hover:text-primary">My Dashboard</Link>
-              <Link href="/tutor/courses/create" className="transition-colors hover:text-primary">Create Course</Link>
-            </>
-          )}
-
-          {(role === 'admin' || role === 'super_admin') && (
-            <>
-              <Link href="/admin" className="transition-colors hover:text-primary">Dashboard</Link>
-              <Link href="/admin/courses" className="transition-colors hover:text-primary">Courses</Link>
-              <Link href="/admin/students" className="transition-colors hover:text-primary">Students</Link>
-            </>
-          )}
+            {/* Mobile menu toggle */}
+            <button
+              className="flex md:hidden items-center justify-center h-9 w-9 rounded-lg border border-border/60 bg-background/50 text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              onClick={() => setMobileOpen((o) => !o)}
+              aria-label="Toggle menu"
+            >
+              {mobileOpen ? <X className="h-4 w-4" /> : <Menu className="h-4 w-4" />}
+            </button>
+          </div>
         </div>
 
-        <div className="flex items-center gap-4">
-          <ModeToggle />
-          <SignedOut>
-            <Link
-              href="/sign-in"
-              className="rounded-full bg-gradient-to-r from-violet-600 to-amber-500 px-6 py-2.5 text-sm font-black text-white shadow-xl shadow-violet-500/20 transition-all hover:scale-105 active:scale-95"
-            >
-              Sign In
-            </Link>
-          </SignedOut>
-          <SignedIn>
-            <Link
-              href="/dashboard"
-              className="text-sm font-medium transition-colors hover:text-primary hidden md:block"
-            >
-              Portal
-            </Link>
-            <UserButton afterSignOutUrl="/" />
-          </SignedIn>
-        </div>
-      </div>
-    </nav>
+        {/* Mobile drawer */}
+        {mobileOpen && (
+          <div className="md:hidden border-t border-border/60 bg-background/95 backdrop-blur-xl px-4 py-4 space-y-1 animate-in fade-in slide-in-from-top-2 duration-200">
+            {links.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center gap-2 rounded-lg px-3 py-2.5 text-sm font-medium text-muted-foreground transition-colors hover:bg-accent hover:text-accent-foreground"
+              >
+                <link.icon className="h-4 w-4" />
+                {link.label}
+              </Link>
+            ))}
+            <SignedOut>
+              <Link
+                href="/sign-in"
+                onClick={() => setMobileOpen(false)}
+                className="flex items-center justify-center rounded-full bg-primary py-2.5 text-sm font-semibold text-primary-foreground mt-2 hover:bg-primary/90"
+              >
+                Sign In
+              </Link>
+            </SignedOut>
+          </div>
+        )}
+      </nav>
+    </>
   )
 }
-
-

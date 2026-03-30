@@ -4,8 +4,10 @@ import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import { createCourse } from '@/actions/course'
 import { Navbar } from '@/components/navigation/Navbar'
-import { ArrowLeft, Loader2 } from 'lucide-react'
+import { ArrowLeft, Loader2, BookOpen, FileText, DollarSign } from 'lucide-react'
 import Link from 'next/link'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
 
 export default function AdminCreateCoursePage() {
   const router = useRouter()
@@ -16,15 +18,13 @@ export default function AdminCreateCoursePage() {
     e.preventDefault()
     setLoading(true)
     setError('')
-    
+
     const formData = new FormData(e.currentTarget)
     const title = formData.get('title') as string
     const description = formData.get('description') as string
     const price = parseFloat(formData.get('price') as string)
 
     try {
-      // The course action uses the logged in user as the tutor_id.
-      // Admin might need to select a tutor, but for now we'll create it under their own id.
       const courseId = await createCourse({ title, description, price })
       router.push(`/admin/courses/${courseId}`)
     } catch (err: any) {
@@ -34,77 +34,116 @@ export default function AdminCreateCoursePage() {
     }
   }
 
+  const inputClass =
+    'w-full h-10 rounded-lg border border-border/60 bg-background px-3.5 py-2 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all'
+
+  const textareaClass =
+    'w-full min-h-[110px] rounded-lg border border-border/60 bg-background px-3.5 py-3 text-sm placeholder:text-muted-foreground/50 focus:outline-none focus:ring-2 focus:ring-primary/20 focus:border-primary/40 transition-all resize-none'
+
   return (
-    <div className="min-h-screen bg-muted/10">
+    <div className="min-h-screen bg-background">
       <Navbar />
-      
-      <div className="container mx-auto px-4 pt-32 pb-12 max-w-3xl">
-        <Link href="/admin" className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors mb-8 font-medium">
+
+      <div className="container mx-auto px-4 lg:px-6 pt-24 pb-16 max-w-2xl">
+        {/* Back link */}
+        <Link
+          href="/admin"
+          className="inline-flex items-center gap-1.5 text-sm text-muted-foreground hover:text-foreground transition-colors mb-6 font-medium"
+        >
           <ArrowLeft className="h-4 w-4" />
           Back to Dashboard
         </Link>
-        
-        <div className="bg-card border rounded-3xl p-8 shadow-sm">
-          <h1 className="text-3xl font-extrabold mb-2">Create New Course</h1>
-          <p className="text-muted-foreground mb-8 text-lg">Set up the basics of your new course as an Admin.</p>
-          
-          {error && (
-            <div className="bg-red-50 text-red-600 p-4 rounded-xl mb-6 font-medium text-sm">
-              {error}
-            </div>
-          )}
 
-          <form onSubmit={handleSubmit} className="space-y-6">
-            <div className="space-y-2">
-              <label htmlFor="title" className="text-sm font-bold block">Course Title</label>
-              <input 
-                type="text" 
-                id="title" 
-                name="title" 
-                required 
-                className="w-full flex h-12 rounded-xl border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                placeholder="e.g. Advanced AI Integration"
-              />
+        <Card className="border-border/60 shadow-sm p-0">
+          <CardHeader className="px-6 pt-6 pb-0">
+            <div className="flex items-center gap-3 mb-1">
+              <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-primary/10 text-primary">
+                <BookOpen className="h-5 w-5" />
+              </div>
+              <div>
+                <CardTitle className="text-lg font-bold">Create New Course</CardTitle>
+                <p className="text-xs text-muted-foreground mt-0.5">Set up the basics of your new course.</p>
+              </div>
             </div>
+          </CardHeader>
 
-            <div className="space-y-2">
-              <label htmlFor="description" className="text-sm font-bold block">Course Description</label>
-              <textarea 
-                id="description" 
-                name="description" 
-                required 
-                rows={4}
-                className="w-full flex min-h-[120px] rounded-xl border border-input bg-background px-4 py-3 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                placeholder="What will students learn?"
-              />
-            </div>
+          <Separator className="mt-5" />
 
-            <div className="space-y-2">
-              <label htmlFor="price" className="text-sm font-bold block">Price (₹)</label>
-              <input 
-                type="number" 
-                id="price" 
-                name="price" 
-                min="0"
-                step="0.01"
-                required 
-                className="w-full flex h-12 rounded-xl border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                placeholder="49.99"
-              />
-            </div>
+          <CardContent className="px-6 py-6">
+            {error && (
+              <div className="bg-destructive/10 text-destructive rounded-lg px-4 py-3 text-sm font-medium mb-5 border border-destructive/20">
+                {error}
+              </div>
+            )}
 
-            <div className="pt-4 flex justify-end">
-              <button 
-                type="submit" 
-                disabled={loading}
-                className="flex items-center gap-2 rounded-xl bg-primary px-8 py-3 text-primary-foreground font-bold shadow-lg transition-all hover:bg-primary/90 disabled:opacity-70"
-              >
-                {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                Create Course & Continue
-              </button>
-            </div>
-          </form>
-        </div>
+            <form onSubmit={handleSubmit} className="space-y-5">
+              {/* Title */}
+              <div className="space-y-1.5">
+                <label htmlFor="title" className="flex items-center gap-1.5 text-xs font-semibold text-foreground/80">
+                  <FileText className="h-3.5 w-3.5" /> Course Title
+                </label>
+                <input
+                  type="text"
+                  id="title"
+                  name="title"
+                  required
+                  className={inputClass}
+                  placeholder="e.g. Advanced AI Integration with Next.js"
+                />
+              </div>
+
+              {/* Description */}
+              <div className="space-y-1.5">
+                <label htmlFor="description" className="flex items-center gap-1.5 text-xs font-semibold text-foreground/80">
+                  <FileText className="h-3.5 w-3.5" /> Description
+                </label>
+                <textarea
+                  id="description"
+                  name="description"
+                  required
+                  className={textareaClass}
+                  placeholder="What will students learn? Describe the course content, goals, and prerequisites..."
+                />
+              </div>
+
+              {/* Price */}
+              <div className="space-y-1.5">
+                <label htmlFor="price" className="flex items-center gap-1.5 text-xs font-semibold text-foreground/80">
+                  <DollarSign className="h-3.5 w-3.5" /> Price (₹) <span className="text-muted-foreground font-normal">· enter 0 for free</span>
+                </label>
+                <input
+                  type="number"
+                  id="price"
+                  name="price"
+                  min="0"
+                  step="0.01"
+                  required
+                  className={inputClass}
+                  placeholder="0"
+                />
+              </div>
+
+              <Separator className="opacity-50" />
+
+              <div className="flex items-center justify-end gap-3 pt-1">
+                <Link
+                  href="/admin"
+                  className="rounded-lg px-4 py-2 text-sm font-medium text-muted-foreground hover:bg-muted transition-colors"
+                >
+                  Cancel
+                </Link>
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-2.5 text-sm font-semibold text-primary-foreground shadow-md shadow-primary/20 transition-all hover:bg-primary/90 disabled:opacity-60 disabled:cursor-not-allowed active:scale-95"
+                >
+                  {loading && <Loader2 className="h-3.5 w-3.5 animate-spin" />}
+                  Create & Continue →
+                </button>
+              </div>
+            </form>
+          </CardContent>
+        </Card>
       </div>
     </div>
   )

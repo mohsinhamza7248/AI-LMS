@@ -19,9 +19,30 @@ import {
   Play,
   CheckCircle2,
   UploadCloud,
+  Layers,
+  Settings,
+  Plus
 } from 'lucide-react'
 import { useRouter } from 'next/navigation'
-import Image from 'next/image'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Label } from '@/components/ui/label'
+import { Switch } from '@/components/ui/switch'
+import { Progress } from '@/components/ui/progress'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog"
 
 // ─────────────────────────────────────────────────────────
 // Types
@@ -54,11 +75,9 @@ async function uploadToCloudinary(
   type: 'image' | 'video',
   onProgress: (pct: number) => void
 ): Promise<string> {
-  // 1. Get signed params from our API
   const res = await fetch(`/api/upload?type=${type}`)
   const { signature, timestamp, cloudName, apiKey, folder } = await res.json()
 
-  // 2. Build multipart form
   const fd = new FormData()
   fd.append('file', file)
   fd.append('api_key', apiKey)
@@ -66,7 +85,6 @@ async function uploadToCloudinary(
   fd.append('signature', signature)
   fd.append('folder', folder)
 
-  // 3. Upload with XHR so we can track progress
   return new Promise((resolve, reject) => {
     const xhr = new XMLHttpRequest()
     xhr.open(
@@ -90,21 +108,6 @@ async function uploadToCloudinary(
 }
 
 // ─────────────────────────────────────────────────────────
-// Progress bar sub-component
-// ─────────────────────────────────────────────────────────
-
-function ProgressBar({ value }: { value: number }) {
-  return (
-    <div className="w-full bg-muted rounded-full h-2 overflow-hidden mt-2">
-      <div
-        className="h-2 rounded-full bg-primary transition-all duration-200"
-        style={{ width: `${value}%` }}
-      />
-    </div>
-  )
-}
-
-// ─────────────────────────────────────────────────────────
 // Main Component
 // ─────────────────────────────────────────────────────────
 
@@ -117,7 +120,7 @@ export default function EditCourseForm({
 }) {
   const router = useRouter()
 
-  // ── Panel A: Details ──────────────────────────────────
+  // ── Panel A: Details
   const [title, setTitle] = useState(course.title)
   const [description, setDescription] = useState(course.description || '')
   const [price, setPrice] = useState(course.price || 0)
@@ -126,7 +129,7 @@ export default function EditCourseForm({
   const [savingDetails, setSavingDetails] = useState(false)
   const [detailsMsg, setDetailsMsg] = useState<{ ok: boolean; text: string } | null>(null)
 
-  // ── Panel B: Thumbnail ────────────────────────────────
+  // ── Panel B: Thumbnail
   const [thumbnailUrl, setThumbnailUrl] = useState<string | null>(
     course.thumbnail_url ?? null
   )
@@ -134,7 +137,7 @@ export default function EditCourseForm({
   const [thumbUploading, setThumbUploading] = useState(false)
   const [thumbError, setThumbError] = useState('')
 
-  // ── Panel C: Lectures ─────────────────────────────────
+  // ── Panel C: Lectures
   const [lectures, setLectures] = useState<Lecture[]>(initialContent)
   const [newLectureTitle, setNewLectureTitle] = useState('')
   const [lectureFile, setLectureFile] = useState<File | null>(null)
@@ -143,6 +146,9 @@ export default function EditCourseForm({
   const [lectureError, setLectureError] = useState('')
   const lectureFileRef = useRef<HTMLInputElement>(null)
 
+  // Dialog state
+  const [deleteId, setDeleteId] = useState<string | null>(null)
+
   // drag state
   const dragId = useRef<string | null>(null)
 
@@ -150,8 +156,7 @@ export default function EditCourseForm({
   // Panel A – Save details
   // ─────────────────────────────────────────────────────
 
-  async function handleSaveDetails(e: React.FormEvent) {
-    e.preventDefault()
+  async function handleSaveDetails() {
     setSavingDetails(true)
     setDetailsMsg(null)
     try {
@@ -185,7 +190,6 @@ export default function EditCourseForm({
       try {
         const url = await uploadToCloudinary(file, 'image', setThumbProgress)
         setThumbnailUrl(url)
-        // Persist to DB
         await updateCourse(course.id, {
           title,
           description,
@@ -229,7 +233,6 @@ export default function EditCourseForm({
       const order_index = lectures.length
       await addLecture(course.id, { title: newLectureTitle.trim(), url, order_index })
 
-      // Optimistic UI
       setLectures((prev) => [
         ...prev,
         {
@@ -252,18 +255,20 @@ export default function EditCourseForm({
     }
   }
 
-  async function handleDeleteLecture(id: string) {
-    if (!confirm('Delete this lecture?')) return
+  async function performDeleteLecture() {
+    if (!deleteId) return
     try {
-      await deleteLecture(id, course.id)
+      await deleteLecture(deleteId, course.id)
       setLectures((prev) => {
         const updated = prev
-          .filter((l) => l.id !== id)
+          .filter((l) => l.id !== deleteId)
           .map((l, i) => ({ ...l, order_index: i }))
         return updated
       })
     } catch (err: any) {
       alert(err.message)
+    } finally {
+      setDeleteId(null)
     }
   }
 
@@ -289,334 +294,401 @@ export default function EditCourseForm({
     dragId.current = null
   }
 
-  // ─────────────────────────────────────────────────────
-  // Render
-  // ─────────────────────────────────────────────────────
-
   return (
-    <div className="max-w-5xl mx-auto">
+    <div className="max-w-6xl mx-auto pb-12">
       {/* Header */}
-      <div className="flex items-center gap-4 mb-8">
-        <button
+      <div className="flex items-center gap-4 mb-10">
+        <Button
+          variant="outline"
+          size="icon"
           onClick={() => router.back()}
-          className="p-2 rounded-full hover:bg-muted transition-colors"
+          className="rounded-full h-12 w-12 border-border/60 hover:bg-muted"
         >
           <ArrowLeft className="h-6 w-6" />
-        </button>
+        </Button>
         <div>
-          <h1 className="text-3xl font-bold">Edit Course</h1>
-          <p className="text-muted-foreground text-sm mt-0.5">
-            Manage details, thumbnail and lectures
+          <h1 className="text-3xl font-bold tracking-tight">Studio · Edit Course</h1>
+          <p className="text-muted-foreground text-sm mt-1">
+            Polishing your masterpiece: manage details, media and curriculum.
           </p>
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <Tabs defaultValue="basic" className="space-y-8">
+        <TabsList className="bg-muted/50 p-1 rounded-full border border-border/40 grid grid-cols-2 max-w-[400px]">
+          <TabsTrigger value="basic" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            Basic Information
+          </TabsTrigger>
+          <TabsTrigger value="curriculum" className="rounded-full data-[state=active]:bg-background data-[state=active]:shadow-sm">
+            Curriculum
+          </TabsTrigger>
+        </TabsList>
+
         {/* ════════════════════════════════════════════════
-            LEFT – Details + Thumbnail
+            TAB 1: BASIC INFORMATION
             ════════════════════════════════════════════════ */}
-        <div className="lg:col-span-1 space-y-6">
-          {/* ── Panel A: Details ─────────────────────── */}
-          <section className="p-6 bg-card rounded-3xl border shadow-sm">
-            <h2 className="text-base font-bold mb-4">Course Details</h2>
-            <form onSubmit={handleSaveDetails} className="space-y-4">
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Title
-                </label>
-                <input
-                  type="text"
-                  value={title}
-                  onChange={(e) => setTitle(e.target.value)}
-                  required
-                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                />
-              </div>
+        <TabsContent value="basic" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* DETAILS */}
+            <Card className="lg:col-span-2 border-border/60 shadow-md">
+              <CardHeader>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                    <Settings className="h-5 w-5" />
+                  </div>
+                  <CardTitle className="text-xl">Course Settings</CardTitle>
+                </div>
+                <CardDescription>Update the primary information and status of your course.</CardDescription>
+              </CardHeader>
+              <Separator />
+              <CardContent className="pt-6 space-y-6">
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Title</Label>
+                  <Input
+                    value={title}
+                    onChange={(e) => setTitle(e.target.value)}
+                    className="h-11 rounded-xl focus-visible:ring-primary/20"
+                    placeholder="Enter course title"
+                  />
+                </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Description
-                </label>
-                <textarea
-                  rows={5}
-                  value={description}
-                  onChange={(e) => setDescription(e.target.value)}
-                  className="w-full rounded-xl border border-input bg-background px-3 py-2 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary resize-none"
-                />
-              </div>
+                <div className="space-y-1.5">
+                  <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Description</Label>
+                  <Textarea
+                    rows={6}
+                    value={description}
+                    onChange={(e) => setDescription(e.target.value)}
+                    className="rounded-xl focus-visible:ring-primary/20 resize-none min-h-[150px]"
+                    placeholder="Whet their appetite with a compelling description..."
+                  />
+                </div>
 
-              <div className="space-y-1.5">
-                <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                  Price (₹)
-                </label>
-                <input
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={price}
-                  onChange={(e) => setPrice(Number(e.target.value))}
-                  className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                />
-              </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                  <div className="space-y-6">
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/40">
+                      <div className="space-y-1">
+                        <Label className="text-sm font-bold">Published Status</Label>
+                        <p className="text-xs text-muted-foreground">Make course visible to all students</p>
+                      </div>
+                      <Switch
+                        checked={isPublished}
+                        onCheckedChange={setIsPublished}
+                      />
+                    </div>
 
-              <div className="pt-1 space-y-3">
-                <ToggleRow
-                  label="Published"
-                  description="Visible to students"
-                  checked={isPublished}
-                  onChange={setIsPublished}
-                  color="primary"
-                />
-                <ToggleRow
-                  label="Live Course"
-                  description="Enable live features"
-                  checked={isLive}
-                  onChange={setIsLive}
-                  color="red"
-                />
-              </div>
+                    <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/40">
+                      <div className="space-y-1">
+                        <Label className="text-sm font-bold">Live Batch Mode</Label>
+                        <p className="text-xs text-muted-foreground">Enable interactivity & live sessions</p>
+                      </div>
+                      <Switch
+                        checked={isLive}
+                        onCheckedChange={setIsLive}
+                        className="data-[state=checked]:bg-destructive"
+                      />
+                    </div>
+                  </div>
 
-              <button
-                type="submit"
-                disabled={savingDetails}
-                className="w-full flex items-center justify-center gap-2 rounded-2xl bg-primary py-3 font-bold text-primary-foreground shadow transition-transform hover:scale-[1.02] active:scale-95 disabled:opacity-60 text-sm"
-              >
-                {savingDetails ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <Save className="h-4 w-4" />
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Course Fee (₹)</Label>
+                    <div className="relative">
+                      <Input
+                        type="number"
+                        min="0"
+                        step="0.01"
+                        value={price}
+                        onChange={(e) => setPrice(Number(e.target.value))}
+                        className="h-11 rounded-xl focus-visible:ring-primary/20 pl-8"
+                      />
+                      <span className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground font-medium">₹</span>
+                    </div>
+                    <p className="text-[10px] text-muted-foreground mt-2 italic">Set to 0 for free courses.</p>
+                  </div>
+                </div>
+              </CardContent>
+              <Separator />
+              <CardFooter className="p-6 flex items-center justify-between">
+                {detailsMsg && (
+                  <div className={`flex items-center gap-2 text-sm font-medium ${detailsMsg.ok ? 'text-emerald-500' : 'text-destructive'}`}>
+                    {detailsMsg.ok ? <CheckCircle2 className="h-4 w-4" /> : <Loader2 strokeWidth={3} className="h-4 w-4 animate-spin" />}
+                    {detailsMsg.text}
+                  </div>
                 )}
-                Save Details
-              </button>
-
-              {detailsMsg && (
-                <p
-                  className={`text-xs text-center font-medium flex items-center justify-center gap-1 ${
-                    detailsMsg.ok ? 'text-green-500' : 'text-red-500'
-                  }`}
+                <div />
+                <Button
+                  onClick={handleSaveDetails}
+                  disabled={savingDetails}
+                  className="rounded-full px-8 h-11 bg-primary hover:bg-primary/90 font-bold"
                 >
-                  {detailsMsg.ok && <CheckCircle2 className="h-3.5 w-3.5" />}
-                  {detailsMsg.text}
-                </p>
-              )}
-            </form>
-          </section>
+                  {savingDetails ? (
+                    <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  ) : (
+                    <Save className="mr-2 h-4 w-4" />
+                  )}
+                  Save All Changes
+                </Button>
+              </CardFooter>
+            </Card>
 
-          {/* ── Panel B: Thumbnail ───────────────────── */}
-          <section className="p-6 bg-card rounded-3xl border shadow-sm">
-            <h2 className="text-base font-bold mb-4 flex items-center gap-2">
-              <ImagePlus className="h-4 w-4 text-primary" />
-              Thumbnail
-            </h2>
-
-            {thumbnailUrl && (
-              <div className="relative w-full aspect-video rounded-2xl overflow-hidden mb-4 bg-muted">
-                <img
-                  src={thumbnailUrl}
-                  alt="Course thumbnail"
-                  className="w-full h-full object-cover"
-                />
-              </div>
-            )}
-
-            <div
-              {...getRootProps()}
-              className={`flex flex-col items-center justify-center gap-2 border-2 border-dashed rounded-2xl p-6 cursor-pointer transition-colors text-center ${
-                isDragActive
-                  ? 'border-primary bg-primary/5'
-                  : 'border-muted-foreground/30 hover:border-primary hover:bg-muted/30'
-              } ${thumbUploading ? 'opacity-60 cursor-not-allowed' : ''}`}
-            >
-              <input {...getInputProps()} />
-              <UploadCloud className="h-8 w-8 text-muted-foreground" />
-              <p className="text-sm font-medium">
-                {isDragActive
-                  ? 'Drop image here…'
-                  : thumbnailUrl
-                  ? 'Drop new image to replace'
-                  : 'Drop image or click to upload'}
-              </p>
-              <p className="text-xs text-muted-foreground">PNG, JPG, WEBP · Max 10 MB</p>
-            </div>
-
-            {thumbUploading && (
-              <div className="mt-3">
-                <p className="text-xs text-muted-foreground mb-1">
-                  Uploading… {thumbProgress}%
-                </p>
-                <ProgressBar value={thumbProgress} />
-              </div>
-            )}
-
-            {thumbError && (
-              <p className="text-red-500 text-xs mt-2">{thumbError}</p>
-            )}
-          </section>
-        </div>
-
-        {/* ════════════════════════════════════════════════
-            RIGHT – Course Content / Lectures
-            ════════════════════════════════════════════════ */}
-        <div className="lg:col-span-2">
-          <section className="p-6 bg-card rounded-3xl border shadow-sm">
-            <h2 className="text-base font-bold mb-1 flex items-center gap-2">
-              <VideoIcon className="h-4 w-4 text-primary" />
-              Course Content
-            </h2>
-            <p className="text-xs text-muted-foreground mb-6">
-              Add lectures in order. Drag to reorder.
-            </p>
-
-            {/* ── Lecture List ──────────────────────── */}
-            {lectures.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-10 text-muted-foreground text-sm gap-2">
-                <VideoIcon className="h-10 w-10 opacity-20" />
-                <p>No lectures yet. Add your first lecture below.</p>
-              </div>
-            ) : (
-              <ul className="space-y-2 mb-6">
-                {lectures.map((lecture, idx) => (
-                  <li
-                    key={lecture.id}
-                    draggable
-                    onDragStart={() => handleDragStart(lecture.id)}
-                    onDragOver={(e) => e.preventDefault()}
-                    onDrop={() => handleDrop(lecture.id)}
-                    className="flex items-center gap-3 p-3 rounded-2xl border bg-background hover:bg-muted/30 transition-colors group cursor-grab active:cursor-grabbing"
-                  >
-                    <GripVertical className="h-4 w-4 text-muted-foreground shrink-0" />
-                    <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary text-xs font-bold shrink-0">
-                      {idx + 1}
-                    </span>
-                    <span className="flex-1 text-sm font-medium truncate">
-                      {lecture.title}
-                    </span>
-                    <a
-                      href={lecture.url}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="p-1.5 rounded-lg hover:bg-primary/10 text-primary transition-colors"
-                      title="Preview video"
-                    >
-                      <Play className="h-3.5 w-3.5" />
-                    </a>
-                    <button
-                      onClick={() => handleDeleteLecture(lecture.id)}
-                      className="p-1.5 rounded-lg hover:bg-red-100 text-muted-foreground hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100"
-                      title="Delete lecture"
-                    >
-                      <Trash2 className="h-3.5 w-3.5" />
-                    </button>
-                  </li>
-                ))}
-              </ul>
-            )}
-
-            {/* ── Add Lecture Form ─────────────────── */}
-            <div className="border-t pt-6">
-              <h3 className="text-sm font-bold mb-4">Add New Lecture</h3>
-              <form onSubmit={handleAddLecture} className="space-y-4">
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Lecture Title
-                  </label>
-                  <input
-                    type="text"
-                    value={newLectureTitle}
-                    onChange={(e) => setNewLectureTitle(e.target.value)}
-                    placeholder="e.g. Introduction to the Course"
-                    className="w-full h-10 rounded-xl border border-input bg-background px-3 text-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
-                  />
+            {/* THUMBNAIL */}
+            <Card className="border-border/60 shadow-md">
+              <CardHeader>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="p-2 rounded-lg bg-amber-500/10 text-amber-500">
+                    <ImagePlus className="h-5 w-5" />
+                  </div>
+                  <CardTitle className="text-xl">Thumbnail</CardTitle>
+                </div>
+              </CardHeader>
+              <Separator />
+              <CardContent className="pt-6">
+                <div className="relative rounded-2xl overflow-hidden mb-6 bg-muted border border-border/40 aspect-video group">
+                  {thumbnailUrl ? (
+                    <>
+                      <img
+                        src={thumbnailUrl}
+                        alt="Course thumbnail"
+                        className="w-full h-full object-cover transition-opacity duration-300 group-hover:opacity-70"
+                      />
+                      <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                        <Button variant="secondary" size="sm" className="rounded-full shadow-lg">Change Image</Button>
+                      </div>
+                    </>
+                  ) : (
+                    <div className="absolute inset-0 flex flex-col items-center justify-center text-muted-foreground gap-3">
+                      <ImagePlus className="h-10 w-10 opacity-20" />
+                      <p className="text-xs font-medium">No thumbnail set</p>
+                    </div>
+                  )}
                 </div>
 
-                <div className="space-y-1.5">
-                  <label className="text-xs font-semibold text-muted-foreground uppercase tracking-wider">
-                    Video File
-                  </label>
-                  <label
-                    htmlFor="lecture-video"
-                    className={`flex items-center gap-3 h-12 w-full rounded-xl border border-dashed border-muted-foreground/40 bg-background px-4 text-sm text-muted-foreground cursor-pointer hover:border-primary hover:bg-muted/20 transition-colors ${
-                      lectureUploading ? 'opacity-60 pointer-events-none' : ''
-                    }`}
-                  >
-                    <VideoIcon className="h-4 w-4 shrink-0" />
-                    <span className="truncate">
-                      {lectureFile ? lectureFile.name : 'Choose video (.mp4, .mov, .webm…)'}
-                    </span>
-                  </label>
-                  <input
-                    ref={lectureFileRef}
-                    id="lecture-video"
-                    type="file"
-                    accept="video/*"
-                    className="hidden"
-                    onChange={(e) => setLectureFile(e.target.files?.[0] ?? null)}
-                  />
-                </div>
-
-                {lectureUploading && (
-                  <div>
-                    <p className="text-xs text-muted-foreground mb-1">
-                      Uploading video… {lectureProgress}%
+                <div
+                  {...getRootProps()}
+                  className={`flex flex-col items-center justify-center gap-3 border-2 border-dashed rounded-2xl p-8 cursor-pointer transition-all ${
+                    isDragActive
+                      ? 'border-primary bg-primary/5 ring-4 ring-primary/10'
+                      : 'border-border hover:border-primary hover:bg-muted/50'
+                  } ${thumbUploading ? 'opacity-50 pointer-events-none' : ''}`}
+                >
+                  <input {...getInputProps()} />
+                  <UploadCloud className={`h-10 w-10 ${isDragActive ? 'text-primary scale-110' : 'text-muted-foreground/50'} transition-all`} />
+                  <div className="text-center">
+                    <p className="text-sm font-bold">
+                      {thumbUploading ? 'Processing File...' : isDragActive ? 'Drop it now!' : 'Click to Upload Thumbnail'}
                     </p>
-                    <ProgressBar value={lectureProgress} />
+                    <p className="text-xs text-muted-foreground mt-1">Recommended: 1280×720 (16:9)</p>
+                  </div>
+                </div>
+
+                {thumbUploading && (
+                  <div className="mt-6 space-y-2">
+                    <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                      <span>Uploading Media</span>
+                      <span>{thumbProgress}%</span>
+                    </div>
+                    <Progress value={thumbProgress} className="h-1.5" />
                   </div>
                 )}
 
-                {lectureError && (
-                  <p className="text-red-500 text-xs">{lectureError}</p>
+                {thumbError && (
+                  <div className="mt-4 p-3 rounded-lg bg-destructive/10 text-destructive text-xs font-medium border border-destructive/20 text-center">
+                    {thumbError}
+                  </div>
                 )}
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
 
-                <button
-                  type="submit"
-                  disabled={lectureUploading || !newLectureTitle.trim() || !lectureFile}
-                  className="flex items-center justify-center gap-2 rounded-2xl bg-primary px-6 py-3 text-sm font-bold text-primary-foreground shadow transition-transform hover:scale-[1.02] active:scale-95 disabled:opacity-60"
-                >
-                  {lectureUploading ? (
-                    <Loader2 className="h-4 w-4 animate-spin" />
-                  ) : (
-                    <UploadCloud className="h-4 w-4" />
+        {/* ════════════════════════════════════════════════
+            TAB 2: CURRICULUM
+            ════════════════════════════════════════════════ */}
+        <TabsContent value="curriculum" className="mt-0 animate-in fade-in slide-in-from-bottom-2 duration-300">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+            {/* LECTURE LIST */}
+            <Card className="lg:col-span-2 border-border/60 shadow-md">
+              <CardHeader>
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-2 mb-1">
+                    <div className="p-2 rounded-lg bg-violet-500/10 text-violet-500">
+                      <Layers className="h-5 w-5" />
+                    </div>
+                    <CardTitle className="text-xl">Module Curriculum</CardTitle>
+                  </div>
+                  <Badge variant="secondary" className="rounded-full px-3">{lectures.length} lessons</Badge>
+                </div>
+                <CardDescription>Organize your course content. Drag and drop to reorder the learning flow.</CardDescription>
+              </CardHeader>
+              <Separator />
+              <CardContent className="pt-6">
+                {lectures.length === 0 ? (
+                  <div className="flex flex-col items-center justify-center py-20 bg-muted/20 border border-dashed border-border rounded-2xl gap-4">
+                    <div className="h-16 w-16 rounded-full bg-background flex items-center justify-center shadow-inner">
+                      <VideoIcon className="h-8 w-8 text-muted-foreground/30" />
+                    </div>
+                    <div className="text-center">
+                      <p className="font-bold">No curriculum yet</p>
+                      <p className="text-xs text-muted-foreground px-10">Add your first lecture using the form on the right to start building your course.</p>
+                    </div>
+                  </div>
+                ) : (
+                  <ul className="space-y-3">
+                    {lectures.map((lecture, idx) => (
+                      <li
+                        key={lecture.id}
+                        draggable
+                        onDragStart={() => handleDragStart(lecture.id)}
+                        onDragOver={(e) => e.preventDefault()}
+                        onDrop={() => handleDrop(lecture.id)}
+                        className="flex items-center gap-4 p-3.5 rounded-2xl border bg-card hover:bg-accent/5 transition-all group cursor-grab active:cursor-grabbing border-border/60 hover:border-primary/40 hover:shadow-sm"
+                      >
+                        <div className="p-2 rounded-lg bg-muted text-muted-foreground group-hover:bg-primary/20 group-hover:text-primary transition-colors shrink-0">
+                          <GripVertical className="h-4 w-4" />
+                        </div>
+                        <div className="flex flex-col flex-1 min-w-0">
+                          <span className="flex items-center gap-2">
+                             <span className="text-[10px] font-black bg-primary/10 text-primary px-2 py-0.5 rounded-full uppercase tracking-widest">Lesson {idx + 1}</span>
+                             {idx === 0 && <span className="text-[10px] font-black bg-emerald-500/10 text-emerald-600 px-2 py-0.5 rounded-full uppercase tracking-widest">Free Preview</span>}
+                          </span>
+                          <span className="text-sm font-bold truncate mt-1">
+                            {lecture.title}
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-2 opacity-100 lg:opacity-0 group-hover:opacity-100 transition-opacity">
+                          <Button asChild variant="ghost" size="icon" className="h-9 w-9 rounded-full hover:bg-primary/10 hover:text-primary">
+                            <a href={lecture.url} target="_blank" rel="noopener noreferrer">
+                              <Play className="h-4 w-4" />
+                            </a>
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => setDeleteId(lecture.id)}
+                            className="h-9 w-9 rounded-full hover:bg-destructive/10 hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </CardContent>
+            </Card>
+
+            {/* ADD MODULE */}
+            <Card className="border-border/60 shadow-md h-fit sticky top-24">
+              <CardHeader>
+                <div className="flex items-center gap-2 mb-1">
+                  <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                    <Plus className="h-5 w-5" />
+                  </div>
+                  <CardTitle className="text-lg">Add Module</CardTitle>
+                </div>
+              </CardHeader>
+              <Separator />
+              <CardContent className="pt-6 space-y-6">
+                <form onSubmit={handleAddLecture} className="space-y-6">
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Title</Label>
+                    <Input
+                      value={newLectureTitle}
+                      onChange={(e) => setNewLectureTitle(e.target.value)}
+                      placeholder="e.g. 01. Intro to Shadcn UI"
+                      className="h-11 rounded-xl focus-visible:ring-primary/20"
+                    />
+                  </div>
+
+                  <div className="space-y-1.5">
+                    <Label className="text-xs font-bold uppercase tracking-wider text-muted-foreground">Media Resource</Label>
+                    <Label
+                      htmlFor="lecture-video"
+                      className={`flex flex-col items-center justify-center gap-3 h-32 w-full rounded-2xl border-2 border-dashed border-border py-4 px-4 text-sm text-center cursor-pointer hover:border-primary hover:bg-muted/50 transition-all ${
+                        lectureUploading ? 'opacity-50 pointer-events-none' : ''
+                      }`}
+                    >
+                      <div className="p-2.5 rounded-full bg-muted/60">
+                        <VideoIcon className="h-6 w-6 text-muted-foreground/70" />
+                      </div>
+                      <span className="font-bold truncate max-w-full px-2">
+                        {lectureFile ? lectureFile.name : 'Choose video file'}
+                      </span>
+                    </Label>
+                    <input
+                      ref={lectureFileRef}
+                      id="lecture-video"
+                      type="file"
+                      accept="video/*"
+                      className="hidden"
+                      onChange={(e) => setLectureFile(e.target.files?.[0] ?? null)}
+                    />
+                  </div>
+
+                  {lectureUploading && (
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                        <span>Uploading Video</span>
+                        <span>{lectureProgress}%</span>
+                      </div>
+                      <Progress value={lectureProgress} className="h-1.5" />
+                    </div>
                   )}
-                  {lectureUploading ? 'Uploading…' : 'Upload & Add Lecture'}
-                </button>
-              </form>
-            </div>
-          </section>
-        </div>
-      </div>
+
+                  {lectureError && (
+                    <div className="p-3 rounded-lg bg-destructive/10 text-destructive text-xs font-medium border border-destructive/20 transition-all animate-in shake duration-500">
+                      {lectureError}
+                    </div>
+                  )}
+
+                  <Button
+                    type="submit"
+                    disabled={lectureUploading || !newLectureTitle.trim() || !lectureFile}
+                    className="w-full h-11 rounded-full font-bold shadow-lg shadow-primary/20"
+                  >
+                    {lectureUploading ? (
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                    ) : (
+                      <Plus className="mr-2 h-4 w-4" />
+                    )}
+                    {lectureUploading ? 'Securing Content...' : 'Add Lesson to Course'}
+                  </Button>
+                </form>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+
+      {/* DELETE CONFIRMATION */}
+      <AlertDialog open={!!deleteId} onOpenChange={(o) => !o && setDeleteId(null)}>
+        <AlertDialogContent className="rounded-3xl border-border/60">
+          <AlertDialogHeader>
+            <AlertDialogTitle className="text-xl font-bold">Remove this lesson?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action will permanently remove this lecture from your course content. This cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter className="gap-2">
+            <AlertDialogCancel className="rounded-full px-6">Keep Lesson</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={performDeleteLecture}
+              className="rounded-full px-6 bg-destructive hover:bg-destructive/90"
+            >
+              Confirm Removal
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   )
 }
 
-// ─────────────────────────────────────────────────────────
-// ToggleRow helper
-// ─────────────────────────────────────────────────────────
-
-function ToggleRow({
-  label,
-  description,
-  checked,
-  onChange,
-  color,
-}: {
-  label: string
-  description: string
-  checked: boolean
-  onChange: (v: boolean) => void
-  color: 'primary' | 'red'
-}) {
-  return (
-    <div className="flex items-center justify-between p-3.5 rounded-2xl bg-muted/30">
-      <div>
-        <p className="font-bold text-sm">{label}</p>
-        <p className="text-xs text-muted-foreground">{description}</p>
-      </div>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(e) => onChange(e.target.checked)}
-        className={`h-5 w-5 ${color === 'primary' ? 'accent-primary' : 'accent-red-500'}`}
-      />
-    </div>
-  )
+function Badge({ children, variant = 'default', className }: { children: React.ReactNode, variant?: 'default' | 'secondary' | 'outline' | 'destructive', className?: string }) {
+  const variants = {
+    default: 'bg-primary text-primary-foreground',
+    secondary: 'bg-muted text-muted-foreground',
+    outline: 'border border-border text-foreground',
+    destructive: 'bg-destructive text-destructive-foreground',
+  }
+  return <span className={`inline-flex items-center text-[10px] font-bold px-2.5 py-0.5 rounded-full ${variants[variant]} ${className}`}>{children}</span>
 }
