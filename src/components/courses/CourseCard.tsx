@@ -1,52 +1,79 @@
 import Link from 'next/link'
-import { BookOpen, User, Star } from 'lucide-react'
-import { Course } from '@/types/database.types'
+import { BookOpen, Star } from 'lucide-react'
+import { Card, CardContent } from '@/components/ui/card'
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar'
+
+const SKILL_LABELS: Record<string, string> = {
+  stitching: '🧵 Stitching',
+  designing: '🎨 Designing',
+  embroidery: '🌸 Embroidery',
+  knitting: '🧶 Knitting',
+  tailoring: '✂️ Tailoring',
+  weaving: '🪡 Weaving',
+  other: '📦 Other',
+}
 
 export function CourseCard({ course }: { course: any }) {
+  const tutorName = course.tutors?.users?.name || 'Expert Tutor'
+  const initials = tutorName.split(' ').map((n: string) => n[0]).join('').slice(0, 2).toUpperCase()
+  const categoryName = course.categories?.name || null
+  const skill = course.skill ? (SKILL_LABELS[course.skill] || course.skill) : null
+
   return (
     <Link href={`/courses/${course.id}`} className="group block">
-      <div className="overflow-hidden rounded-2xl border bg-card p-2 shadow-sm transition-all hover:-translate-y-1 hover:shadow-lg">
-        <div className="relative aspect-video w-full overflow-hidden rounded-xl bg-muted">
+      <Card className="overflow-hidden border-border/60 bg-card transition-all duration-300 hover:-translate-y-1 hover:shadow-lg hover:shadow-primary/5 hover:border-primary/20 p-0">
+        {/* Thumbnail */}
+        <div className="relative aspect-video w-full overflow-hidden bg-muted">
           {course.thumbnail_url ? (
             <img
               src={course.thumbnail_url}
               alt={course.title}
-              className="h-full w-full object-cover transition-transform group-hover:scale-110"
+              className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
             />
           ) : (
-            <div className="flex h-full w-full items-center justify-center bg-gradient-to-br from-primary/20 to-primary/5">
-              <BookOpen className="h-10 w-10 text-primary/40" />
+            <div className="flex h-full w-full items-center justify-center bg-linear-to-br from-primary/10 to-secondary/10">
+              <BookOpen className="h-10 w-10 text-primary/30" />
             </div>
           )}
-          {/* <div className="absolute top-3 right-3 rounded-lg bg-background/80 backdrop-blur-md px-2 py-1 text-xs font-bold shadow-sm">
-            ₹{course.price}
-          </div> */}
+          <div className="absolute inset-0 bg-linear-to-t from-black/20 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+
+          {/* Skill badge on thumbnail */}
+          {skill && (
+            <div className="absolute top-2 left-2">
+              <span className="inline-flex items-center rounded-full bg-black/60 backdrop-blur-sm text-white px-2.5 py-0.5 text-[10px] font-semibold">
+                {skill}
+              </span>
+            </div>
+          )}
         </div>
 
-        <div className="p-4 space-y-3">
-          {/* 
-          <div className="flex items-center gap-2 text-xs font-bold text-primary uppercase tracking-wider">
-            {course.categories?.name || 'Uncategorized'}
-          </div>
-          */}
-          <h3 className="font-bold text-lg leading-tight group-hover:text-primary transition-colors line-clamp-2">
+        <CardContent className="p-4 space-y-3">
+          {/* Category pill */}
+          {categoryName && (
+            <span className="inline-flex items-center rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 px-2.5 py-0.5 text-[10px] font-semibold">
+              📂 {categoryName}
+            </span>
+          )}
+
+          <h3 className="font-semibold text-sm leading-snug group-hover:text-primary transition-colors line-clamp-2">
             {course.title}
           </h3>
 
-          <div className="flex items-center justify-between pt-2 border-t text-sm text-muted-foreground">
+          <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <div className="h-6 w-6 rounded-full bg-muted flex items-center justify-center overflow-hidden">
-                <User className="h-4 w-4" />
-              </div>
-              <span className="font-medium truncate max-w-[100px]">{course.tutors?.users?.name || 'Expert Tutor'}</span>
+              <Avatar className="h-6 w-6">
+                <AvatarImage src={course.tutors?.users?.avatar} />
+                <AvatarFallback className="text-[10px] bg-muted">{initials}</AvatarFallback>
+              </Avatar>
+              <span className="text-xs text-muted-foreground font-medium truncate max-w-[100px]">{tutorName}</span>
             </div>
-            <div className="flex items-center gap-1 text-amber-500 font-bold">
-              <Star className="h-4 w-4 fill-current" />
-              <span>4.8</span>
+            <div className="flex items-center gap-1 text-amber-500">
+              <Star className="h-3.5 w-3.5 fill-current" />
+              <span className="text-xs font-bold">4.8</span>
             </div>
           </div>
-        </div>
-      </div>
+        </CardContent>
+      </Card>
     </Link>
   )
 }

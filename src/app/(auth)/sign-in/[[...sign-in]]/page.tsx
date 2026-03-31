@@ -3,7 +3,12 @@
 import * as React from 'react'
 import { useSignIn, useSignUp } from '@clerk/nextjs'
 import { useRouter, useSearchParams } from 'next/navigation'
-import { ArrowLeft, ArrowRight, Loader2, Phone, ShieldCheck } from 'lucide-react'
+import Link from 'next/link'
+import Image from 'next/image'
+import { ArrowLeft, ArrowRight, Loader2, Phone, ShieldCheck, Mail, Lock } from 'lucide-react'
+import { ParticlesBg } from '@/components/ui/ParticlesBg'
+import { Badge } from '@/components/ui/badge'
+import { cn } from '@/lib/utils'
 
 export default function SignInPage() {
   const { isLoaded: isSignInLoaded, signIn, setActive: setSignInActive } = useSignIn()
@@ -114,112 +119,152 @@ export default function SignInPage() {
   }
 
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-[#0b0f19] p-4 overflow-hidden">
-      {/* Background Gradients */}
-      <div className="absolute top-[-10%] left-[-10%] h-[500px] w-[500px] rounded-full bg-violet-600/20 blur-[120px]" />
-      <div className="absolute bottom-[-10%] right-[-10%] h-[500px] w-[500px] rounded-full bg-amber-500/20 blur-[120px]" />
+    <div className="relative flex min-h-screen items-center justify-center bg-background p-4 overflow-hidden">
+      <ParticlesBg />
 
-      <div className="relative z-10 w-full max-w-md rounded-[2.5rem] border border-white/5 bg-black/40 p-8 shadow-2xl backdrop-blur-xl">
-        <div className="mb-10 flex flex-col items-center justify-center space-y-4">
-          <div className="flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500/20 to-amber-500/20 text-amber-400 border border-white/10 shadow-inner">
-            {verifying ? <ShieldCheck className="h-10 w-10 text-amber-400 drop-shadow-lg" /> : <Phone className="h-10 w-10 text-violet-400 drop-shadow-lg" />}
-          </div>
-          <h1 className="text-3xl font-black tracking-tight text-white text-center">
-            {verifying ? 'Verify Your Account' : (
-              <>
-                <span className="bg-gradient-to-r from-violet-400 to-amber-400 bg-clip-text text-transparent">Welcome</span> back
-              </>
-            )}
-          </h1>
-          <p className="text-center text-sm font-medium text-gray-400">
-            {verifying
-              ? `We sent a secure code to ${phone}`
-              : 'Enter your phone number to continue your journey.'}
-          </p>
+      {/* Decorative Blur and Gradients */}
+      <div className="absolute top-1/4 left-1/4 h-96 w-96 rounded-full bg-primary/20 blur-[120px] -z-10 animate-pulse duration-[10s]" />
+      <div className="absolute bottom-1/4 right-1/4 h-96 w-96 rounded-full bg-secondary/15 blur-[120px] -z-10 animate-pulse duration-[8s]" />
+
+      <div className="relative z-10 w-full max-w-md">
+        {/* Logo Section */}
+        <div className="mb-8 flex flex-col items-center">
+          <Link href="/" className="flex h-20 w-40 items-center justify-center transition-transform hover:scale-105 duration-300 cursor-pointer">
+            <img src="/logo.png" alt="Logo" className="h-full w-full object-contain" />
+          </Link>
         </div>
 
-        {error && (
-          <div className="mb-8 rounded-2xl border border-red-500/20 bg-red-500/10 p-4 text-sm font-medium text-red-400 flex items-start gap-3">
-            <div className="mt-0.5">⚠️</div>
-            <div>{error}</div>
-          </div>
-        )}
+        <div className="glass-card rounded-[2.5rem] p-8 shadow-2xl overflow-hidden relative">
+          {/* Subtle line decoration */}
+          <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-primary via-secondary to-primary opacity-50" />
 
-        {!verifying ? (
-          <form onSubmit={handlePhoneSubmit} className="space-y-6">
-            <div className="space-y-3">
-              <label htmlFor="phone" className="text-sm font-bold text-gray-300">
-                Phone Number
-              </label>
-              <input
-                id="phone"
-                type="tel"
-                placeholder="+1 234 567 8900"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
-                required
-                className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-sm text-white placeholder-gray-500 transition-colors focus:border-violet-500 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-violet-500"
-              />
-            </div>
-            
-            <button
-              type="submit"
-              disabled={isLoading || !phone}
-              className="group mt-8 flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-violet-600 to-amber-500 px-4 py-4 text-base font-bold text-white shadow-[0_0_40px_-10px_rgba(139,92,246,0.5)] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
-            >
-              {isLoading ? (
-                <Loader2 className="h-5 w-5 animate-spin" />
+          <div className="mb-10 flex flex-col items-center justify-center space-y-4">
+            <div className="flex h-16 w-16 items-center justify-center rounded-2xl bg-primary/10 text-primary border border-primary/20 shadow-inner group">
+              {verifying ? (
+                <ShieldCheck className="h-8 w-8 text-primary drop-shadow-[0_0_8px_rgba(255,102,0,0.4)] group-hover:scale-110 transition-transform" />
               ) : (
-                <>
-                  Continue securely
-                  <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
-                </>
+                <Phone className="h-8 w-8 text-primary drop-shadow-[0_0_8px_rgba(255,102,0,0.4)] group-hover:scale-110 transition-transform" />
               )}
-            </button>
-          </form>
-        ) : (
-          <form onSubmit={handleVerifySubmit} className="space-y-6">
-            <div className="space-y-3">
-              <label htmlFor="code" className="text-sm font-bold text-gray-300">
-                Verification Code
-              </label>
-              <div className="relative">
-                <input
-                  id="code"
-                  type="text"
-                  maxLength={6}
-                  placeholder="000 000"
-                  value={code}
-                  onChange={(e) => setCode(e.target.value)}
-                  required
-                  className="w-full rounded-2xl border border-white/10 bg-white/5 px-5 py-4 text-center text-3xl font-black tracking-[0.5em] text-white transition-colors focus:border-amber-500 focus:bg-white/10 focus:outline-none focus:ring-1 focus:ring-amber-500"
-                />
-              </div>
             </div>
-            
-            <button
-              type="submit"
-              disabled={isLoading || code.length < 6}
-              className="mt-8 flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-amber-500 to-orange-500 px-4 py-4 text-base font-bold text-white shadow-[0_0_40px_-10px_rgba(245,158,11,0.5)] transition-all hover:scale-[1.02] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
-            >
-              {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
-              Verify & Sign In
-            </button>
-            
-            <button
-              type="button"
-              onClick={() => {
-                setVerifying(false)
-                setCode('')
-                setError('')
-              }}
-              className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-gray-400 transition-colors hover:bg-white/5 hover:text-white"
-            >
-              <ArrowLeft className="h-4 w-4" />
-              Use a different number
-            </button>
-          </form>
-        )}
+
+            <div className="space-y-1.5 text-center">
+              <Badge variant="outline" className="mb-2 rounded-full border-primary/30 bg-primary/5 text-primary text-[10px] uppercase tracking-widest font-bold px-3 py-0.5">
+                {verifying ? 'Security' : 'Authentication'}
+              </Badge>
+              <h1 className="text-3xl font-black tracking-tight text-foreground">
+                {verifying ? 'Verify Identity' : (
+                  <>
+                    <span className="text-gradient-primary">Welcome</span> Back
+                  </>
+                )}
+              </h1>
+              <p className="text-sm font-medium text-muted-foreground/80 max-w-[260px] mx-auto leading-relaxed">
+                {verifying
+                  ? `Enter the 6-digit code sent to ${phone}`
+                  : 'Enter your phone number to continue your learning journey.'}
+              </p>
+            </div>
+          </div>
+
+          {error && (
+            <div className="mb-8 rounded-2xl border border-destructive/20 bg-destructive/10 p-4 text-sm font-medium text-destructive flex items-start gap-4 animate-in fade-in zoom-in duration-300">
+              <div className="mt-0.5 text-lg">⚠️</div>
+              <div className="flex-1">{error}</div>
+            </div>
+          )}
+
+          {!verifying ? (
+            <form onSubmit={handlePhoneSubmit} className="space-y-6">
+              <div className="space-y-3">
+                <label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70 ml-1">
+                  Phone Number
+                </label>
+                <div className="relative group">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-muted-foreground/50 group-focus-within:text-primary transition-colors">
+                    <Phone className="h-4 w-4" />
+                  </div>
+                  <input
+                    id="phone"
+                    type="tel"
+                    placeholder="+91 000 000 0000"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                    className="w-full rounded-2xl border border-border/60 bg-muted/5 pl-11 pr-5 py-4 text-sm text-foreground placeholder-muted-foreground/40 transition-all focus:border-primary/50 focus:bg-background focus:outline-none focus:ring-4 focus:ring-primary/5"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading || !phone}
+                className="group mt-8 flex w-full items-center justify-center gap-3 rounded-2xl bg-primary px-4 py-4 text-base font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:bg-primary/90 hover:scale-[1.02] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+              >
+                {isLoading ? (
+                  <Loader2 className="h-5 w-5 animate-spin" />
+                ) : (
+                  <>
+                    Continue
+                    <ArrowRight className="h-5 w-5 transition-transform group-hover:translate-x-1" />
+                  </>
+                )}
+              </button>
+
+              <div className="mt-8 flex items-center justify-center gap-2">
+                <div className="h-px flex-1 bg-border/40" />
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 px-2">Safe & Secure</span>
+                <div className="h-px flex-1 bg-border/40" />
+              </div>
+            </form>
+          ) : (
+            <form onSubmit={handleVerifySubmit} className="space-y-6">
+              <div className="space-y-3">
+                <label htmlFor="code" className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70 ml-1">
+                  Verification Code
+                </label>
+                <div className="relative">
+                  <input
+                    id="code"
+                    type="text"
+                    maxLength={6}
+                    placeholder="000 000"
+                    value={code}
+                    onChange={(e) => setCode(e.target.value)}
+                    required
+                    className="w-full rounded-2xl border border-border/60 bg-muted/5 px-5 py-4 text-center text-3xl font-black tracking-[0.5em] text-foreground transition-all focus:border-secondary/50 focus:bg-background focus:outline-none focus:ring-4 focus:ring-secondary/5"
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                disabled={isLoading || code.length < 6}
+                className="mt-8 flex w-full items-center justify-center gap-3 rounded-2xl bg-gradient-to-r from-primary to-secondary px-4 py-4 text-base font-bold text-primary-foreground shadow-lg shadow-primary/20 transition-all hover:opacity-95 hover:scale-[1.02] active:scale-[0.98] disabled:pointer-events-none disabled:opacity-50"
+              >
+                {isLoading && <Loader2 className="h-5 w-5 animate-spin" />}
+                Confirm Code
+              </button>
+
+              <button
+                type="button"
+                onClick={() => {
+                  setVerifying(false)
+                  setCode('')
+                  setError('')
+                }}
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-muted-foreground/60 transition-colors hover:bg-muted/10 hover:text-foreground"
+              >
+                <ArrowLeft className="h-4 w-4" />
+                Change Phone Number
+              </button>
+            </form>
+          )}
+        </div>
+
+        {/* Footer info */}
+        <p className="mt-8 text-center text-[11px] font-medium text-muted-foreground/50">
+          By continuing, you agree to our <span className="underline hover:text-primary transition-colors cursor-pointer">Terms of Service</span> and <span className="underline hover:text-primary transition-colors cursor-pointer">Privacy Policy</span>.
+        </p>
       </div>
     </div>
   )

@@ -4,7 +4,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
 
-export async function createCourse(data: { title: string, description: string, price: number }) {
+export async function createCourse(data: { title: string, description: string, price: number, category_id?: string | null, skill?: string | null }) {
   const { userId } = await auth()
   if (!userId) throw new Error('Unauthorized')
 
@@ -45,6 +45,8 @@ export async function createCourse(data: { title: string, description: string, p
     tutor_id: tutorId,
     is_published: false,
     is_live: false,
+    category_id: data.category_id || null,
+    skill: data.skill || null,
   } as any).select('id').single() as any
 
   if (error) throw new Error(error.message)

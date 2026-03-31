@@ -185,6 +185,96 @@ export async function addUser(data: { name: string, email?: string, phone: strin
   return { success: true }
 }
 
+export async function getCategoryList() {
+  const admin = await checkAdmin()
+  const supabase = createAdminClient() as any
+
+  const { data } = await supabase
+    .from('categories')
+    .select('id, name, slug, icon')
+    .eq('tenant_id', admin.tenant_id)
+    .order('name', { ascending: true }) as any
+
+  return data || []
+}
+
+export async function createCategory(data: { name: string; slug: string; icon: string }) {
+  const admin = await checkAdmin()
+  const supabase = createAdminClient() as any
+
+  const { error } = await supabase
+    .from('categories')
+    .insert({
+      name: data.name,
+      slug: data.slug,
+      icon: data.icon,
+      tenant_id: admin.tenant_id
+    })
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/admin')
+  revalidatePath('/admin/categories')
+  return { success: true }
+}
+
+export async function updateCategory(id: string, data: { name: string; slug: string; icon: string }) {
+  const admin = await checkAdmin()
+  const supabase = createAdminClient() as any
+
+  const { error } = await supabase
+    .from('categories')
+    .update({
+      name: data.name,
+      slug: data.slug,
+      icon: data.icon
+    })
+    .eq('id', id)
+    .eq('tenant_id', admin.tenant_id)
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/admin')
+  revalidatePath('/admin/categories')
+  return { success: true }
+}
+
+export async function deleteCategory(id: string) {
+  const admin = await checkAdmin()
+  const supabase = createAdminClient() as any
+
+  const { error } = await supabase
+    .from('categories')
+    .delete()
+    .eq('id', id)
+    .eq('tenant_id', admin.tenant_id)
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/admin')
+  revalidatePath('/admin/categories')
+  return { success: true }
+}
+
+export async function deleteCourse(id: string) {
+  const admin = await checkAdmin()
+  const supabase = createAdminClient() as any
+
+  const { error } = await supabase
+    .from('courses')
+    .delete()
+    .eq('id', id)
+    .eq('tenant_id', admin.tenant_id)
+
+  if (error) throw new Error(error.message)
+
+  revalidatePath('/admin')
+  revalidatePath('/admin/courses')
+  revalidatePath('/courses')
+  return { success: true }
+}
+
+
 export async function getCourseList() {
   const admin = await checkAdmin()
   const supabase = createAdminClient() as any
@@ -192,8 +282,9 @@ export async function getCourseList() {
   const { data } = await supabase
     .from('courses')
     .select(`
-      id, title, price, is_published, is_live, thumbnail_url, created_at,
-      tutors ( users ( name ) )
+      id, title, price, is_published, is_live, thumbnail_url, created_at, skill,
+      tutors ( users ( name ) ),
+      categories ( id, name )
     `)
     .eq('tenant_id', admin.tenant_id)
     .order('created_at', { ascending: false }) as any
@@ -206,7 +297,10 @@ export async function getCourseList() {
     isLive: c.is_live,
     thumbnailUrl: c.thumbnail_url,
     tutorName: c.tutors?.users?.name || 'Unknown',
-    createdAt: c.created_at
+    createdAt: c.created_at,
+    skill: c.skill || null,
+    categoryName: c.categories?.name || null,
+    categoryId: c.categories?.id || null,
   })) || []
 }
 
@@ -217,8 +311,9 @@ export async function getCourseById(id: string) {
   const { data, error } = await supabase
     .from('courses')
     .select(`
-      id, title, description, price, is_published, is_live, thumbnail_url,
-      tutors ( id, users ( name ) )
+      id, title, description, price, is_published, is_live, thumbnail_url, skill, category_id,
+      tutors ( id, users ( name ) ),
+      categories ( id, name )
     `)
     .eq('id', id)
     .eq('tenant_id', admin.tenant_id)
@@ -237,6 +332,8 @@ export async function updateCourse(
     is_published?: boolean
     is_live?: boolean
     thumbnail_url?: string
+    category_id?: string | null
+    skill?: string | null
   }
 ) {
   const admin = await checkAdmin()
@@ -254,6 +351,12 @@ export async function updateCourse(
   if (data.thumbnail_url !== undefined) {
     updatePayload.thumbnail_url = data.thumbnail_url
   }
+  if (data.category_id !== undefined) {
+    updatePayload.category_id = data.category_id || null
+  }
+  if (data.skill !== undefined) {
+    updatePayload.skill = data.skill || null
+  }
 
   const { error } = await supabase
     .from('courses')
@@ -265,6 +368,7 @@ export async function updateCourse(
 
   revalidatePath('/admin/courses')
   revalidatePath(`/admin/courses/${id}`)
+  revalidatePath('/courses')
   return { success: true }
 }
 
