@@ -16,10 +16,9 @@ export default async function CoursesPage(props: {
   const skill = typeof searchParams.skill === 'string' ? searchParams.skill : undefined
   const search = typeof searchParams.search === 'string' ? searchParams.search : undefined
 
-  const tenant = await getActiveTenant()
-  const courses = await getCoursesByTenant(tenant?.id, { categoryId, skill, search })
-  const categories = await getCategoriesByTenant(tenant?.id)
-  const availableSkills = await getAvailableSkills(tenant?.id)
+  const courses = await getCoursesByTenant(undefined, { categoryId, skill, search })
+  const categories = await getCategoriesByTenant()
+  const availableSkills = await getAvailableSkills()
 
   return (
     <div className="relative min-h-screen bg-background overflow-hidden">
