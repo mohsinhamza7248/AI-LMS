@@ -14,9 +14,9 @@ export default async function AdminEditCoursePage({
   ])
 
   return (
-    <div className="min-h-screen bg-muted/20">
+    <div className="min-h-screen bg-background">
       <Navbar />
-      <div className="container mx-auto px-4 pt-24 pb-12">
+      <div className="container mx-auto px-4 lg:px-6 pt-24 pb-12">
         <EditCourseForm course={course} initialContent={initialContent} />
       </div>
     </div>

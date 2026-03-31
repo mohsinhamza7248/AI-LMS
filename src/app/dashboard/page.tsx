@@ -28,7 +28,7 @@ export default async function DashboardPage() {
   } else if (role === 'tutor') {
     redirect('/tutor')
   } else {
-    // Default to student — courses page
-    redirect('/courses')
+    // Default to student — my learning page
+    redirect('/my-learning')
   }
 }

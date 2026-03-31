@@ -1,6 +1,6 @@
 'use server'
 
-import { createClient } from '@/lib/supabase/server'
+import { createAdminClient } from '@/lib/supabase/admin'
 import { auth } from '@clerk/nextjs/server'
 import { revalidatePath } from 'next/cache'
 import { syncUserToSupabase } from '@/actions/sync-user'
@@ -9,7 +9,7 @@ export async function enrollCourse(courseId: string) {
   const { userId } = await auth()
   if (!userId) throw new Error('Unauthorized')
 
-  const supabase = await createClient()
+  const supabase = createAdminClient()
   
   // Get user ID mapped from Clerk
   let { data: dbUser } = await supabase.from('users').select('id, tenant_id').eq('clerk_id', userId).single()

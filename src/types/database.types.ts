@@ -75,6 +75,7 @@ export interface Database {
           price: number
           is_published: boolean
           is_live: boolean
+          skill: string | null
           created_at: string
           updated_at: string
         }

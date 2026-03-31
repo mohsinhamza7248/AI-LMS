@@ -1,8 +1,13 @@
 'use client'
 
 import { useState } from 'react'
-import { addUser } from '@/actions/admin' // Using addUser which supports roles natively
-import { Loader2, UserPlus, X } from 'lucide-react'
+import { addUser } from '@/actions/admin'
+import { Loader2, UserPlus, X, Mail, Phone, User } from 'lucide-react'
+import { Card, CardContent, CardHeader, CardTitle, CardDescription, CardFooter } from '@/components/ui/card'
+import { Separator } from '@/components/ui/separator'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Label } from '@/components/ui/label'
 
 export function AddUserForm() {
   const [open, setOpen] = useState(false)
@@ -20,7 +25,6 @@ export function AddUserForm() {
     setSuccess('')
 
     try {
-      // Hardcode role to 'tutor' per request
       await addUser({ name, email, phone, role: 'tutor' })
       setSuccess('Tutor added successfully!')
       setName('')
@@ -36,93 +40,122 @@ export function AddUserForm() {
 
   return (
     <>
-      <button 
+      <Button
         onClick={() => setOpen(true)}
-        className="flex items-center gap-2 rounded-full bg-muted/50 px-6 py-3 font-bold text-foreground transition-all hover:bg-muted"
+        variant="default"
+        className="rounded-full gap-2 px-6 shadow-lg shadow-primary/20 hover:shadow-primary/30 transition-all font-bold"
       >
-        <UserPlus className="h-5 w-5" />
+        <UserPlus className="h-4 w-4" />
         Add Tutor
-      </button>
+      </Button>
 
       {open && (
-        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-card w-full max-w-md rounded-3xl border shadow-lg overflow-hidden animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between p-6 border-b">
-              <div>
-                <h2 className="text-xl font-bold">Add Tutor</h2>
-                <p className="text-sm text-muted-foreground mt-1">
-                  Enter the tutor's details to pre-register or promote them.
-                </p>
+        <div className="fixed inset-0 z-50 bg-background/80 backdrop-blur-md flex items-center justify-center p-4 animate-in fade-in duration-300">
+          <Card className="w-full max-w-md border-border/60 shadow-2xl animate-in zoom-in-95 duration-200 overflow-hidden">
+            <CardHeader className="relative pb-4">
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => setOpen(false)}
+                className="absolute right-4 top-4 h-8 w-8 rounded-full hover:bg-muted"
+              >
+                <X className="h-4 w-4" />
+              </Button>
+              <div className="flex items-center gap-3 mb-2">
+                 <div className="p-2 rounded-xl bg-primary/10 text-primary">
+                    <UserPlus className="h-5 w-5" />
+                 </div>
+                 <CardTitle className="text-xl font-bold">Register New Tutor</CardTitle>
               </div>
-              <button onClick={() => setOpen(false)} className="rounded-full p-2 hover:bg-muted transition-colors">
-                <X className="h-5 w-5" />
-              </button>
-            </div>
-            
-            <form onSubmit={handleSubmit} className="p-6 space-y-4">
-              <div className="space-y-2">
-                <label htmlFor="name" className="text-sm font-bold block">Full Name</label>
-                <input 
-                  type="text" 
-                  id="name" 
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  required 
-                  className="w-full flex h-12 rounded-xl border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                  placeholder="e.g. John Doe"
-                />
-              </div>
+              <CardDescription>
+                Onboard a new instructor to the platform. They will be able to manage their own courses.
+              </CardDescription>
+            </CardHeader>
 
-              <div className="space-y-2">
-                <label htmlFor="phone" className="text-sm font-bold block">Phone Number (Required for Login)</label>
-                <input 
-                  type="tel" 
-                  id="phone" 
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  required 
-                  className="w-full flex h-12 rounded-xl border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                  placeholder="+1234567890"
-                />
-              </div>
+            <Separator />
 
-              <div className="space-y-2">
-                <label htmlFor="email" className="text-sm font-bold block">Email Address (Optional)</label>
-                <input 
-                  type="email" 
-                  id="email" 
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="w-full flex h-12 rounded-xl border border-input bg-background px-4 py-2 text-sm ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
-                  placeholder="john@example.com"
-                />
-              </div>
+            <CardContent className="pt-6">
+              <form id="add-tutor-form" onSubmit={handleSubmit} className="space-y-5">
+                <div className="space-y-2">
+                  <Label htmlFor="name" className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <User className="h-3 w-3" /> Full Name
+                  </Label>
+                  <Input
+                    id="name"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    required
+                    className="h-11 rounded-xl focus-visible:ring-primary/20"
+                    placeholder="e.g. Dr. Jane Smith"
+                  />
+                </div>
 
-              {error && <p className="text-red-500 text-sm font-medium bg-red-50 p-3 rounded-xl">{error}</p>}
-              {success && <p className="text-green-500 text-sm font-medium bg-green-50 p-3 rounded-xl">{success}</p>}
+                <div className="space-y-2">
+                  <Label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <Phone className="h-3 w-3" /> Phone Number <span className="lowercase font-normal opacity-70">(required for login)</span>
+                  </Label>
+                  <Input
+                    id="phone"
+                    type="tel"
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    required
+                    className="h-11 rounded-xl focus-visible:ring-primary/20"
+                    placeholder="+91 98765 43210"
+                  />
+                </div>
 
-              <div className="flex justify-end gap-3 pt-4">
-                <button
-                  type="button"
-                  onClick={() => setOpen(false)}
-                  className="rounded-xl px-4 py-2 text-sm font-bold hover:bg-muted focus:outline-none"
-                >
-                  Cancel
-                </button>
-                <button 
-                  type="submit" 
-                  disabled={loading || !name || !phone}
-                  className="flex items-center gap-2 rounded-xl bg-primary px-6 py-2 text-primary-foreground font-bold transition-all hover:bg-primary/90 disabled:opacity-70"
-                >
-                  {loading && <Loader2 className="h-4 w-4 animate-spin" />}
-                  Save Tutor
-                </button>
-              </div>
-            </form>
-          </div>
+                <div className="space-y-2">
+                  <Label htmlFor="email" className="text-xs font-bold uppercase tracking-wider text-muted-foreground flex items-center gap-2">
+                    <Mail className="h-3 w-3" /> Email Address <span className="lowercase font-normal opacity-70">(optional)</span>
+                  </Label>
+                  <Input
+                    id="email"
+                    type="email"
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
+                    className="h-11 rounded-xl focus-visible:ring-primary/20"
+                    placeholder="jane.smith@example.com"
+                  />
+                </div>
+
+                {error && (
+                  <div className="p-3 rounded-xl bg-destructive/10 text-destructive text-xs font-medium border border-destructive/20 animate-in shake duration-500">
+                    {error}
+                  </div>
+                )}
+                {success && (
+                  <div className="p-3 rounded-xl bg-emerald-500/10 text-emerald-600 text-xs font-medium border border-emerald-500/20 flex items-center gap-2 animate-in zoom-in-95 duration-300">
+                    <Loader2 className="h-3 w-3 animate-spin" />
+                    {success}
+                  </div>
+                )}
+              </form>
+            </CardContent>
+
+            <Separator />
+
+            <CardFooter className="bg-muted/30 p-6 flex justify-end gap-3">
+              <Button
+                variant="ghost"
+                onClick={() => setOpen(false)}
+                className="rounded-full px-6"
+              >
+                Cancel
+              </Button>
+              <Button
+                form="add-tutor-form"
+                type="submit"
+                disabled={loading || !name || !phone}
+                className="rounded-full px-8 bg-primary hover:bg-primary/90 font-bold"
+              >
+                {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                Add Tutor
+              </Button>
+            </CardFooter>
+          </Card>
         </div>
       )}
     </>
   )
 }
-

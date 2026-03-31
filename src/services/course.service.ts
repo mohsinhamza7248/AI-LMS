@@ -7,6 +7,8 @@ export async function getCoursesByTenant(tenantId: string, options?: {
   limit?: number
   offset?: number
   published?: boolean
+  skill?: string
+  search?: string
 }) {
   const supabase = createAdminClient() as any
   let query = supabase
@@ -23,6 +25,12 @@ export async function getCoursesByTenant(tenantId: string, options?: {
   }
   if (options?.categoryId) {
     query = query.eq('category_id', options.categoryId)
+  }
+  if (options?.skill && options.skill !== 'All Levels') {
+    query = query.eq('skill', options.skill)
+  }
+  if (options?.search) {
+    query = query.ilike('title', `%${options.search}%`)
   }
   if (options?.limit) {
     query = query.limit(options.limit)
@@ -81,4 +89,66 @@ export async function deleteCourse(id: string) {
 
 export async function getFeaturedCourses(tenantId: string, limit = 6) {
   return getCoursesByTenant(tenantId, { limit, published: true })
+}
+
+export async function getEnrolledCourses(userId: string) {
+  const supabase = createAdminClient() as any
+  const { data, error } = await supabase
+    .from('enrollments')
+    .select(`
+      id,
+      progress,
+      enrolled_at,
+      courses (
+        id,
+        title,
+        thumbnail_url,
+        description,
+        tutors (
+          users (
+            name
+          )
+        )
+      )
+    `)
+    .eq('user_id', userId)
+    .order('enrolled_at', { ascending: false })
+
+  if (error) {
+    console.error('Error fetching enrolled courses:', error)
+    return []
+  }
+
+  return data.map((item: any) => ({
+    id: item.courses.id,
+    title: item.courses.title,
+    thumbnail_url: item.courses.thumbnail_url,
+    instructor: item.courses.tutors?.users?.name || 'Expert Instructor',
+    progress: item.progress || 0,
+    enrolledAt: item.enrolled_at
+  }))
+}
+
+export async function getCategoriesByTenant(tenantId: string) {
+  const supabase = createAdminClient() as any
+  const { data } = await supabase
+    .from('categories')
+    .select('id, name, slug')
+    .eq('tenant_id', tenantId)
+    .order('name')
+  return data || []
+}
+
+export async function getAvailableSkills(tenantId: string) {
+  const supabase = createAdminClient() as any
+  const { data } = await supabase
+    .from('courses')
+    .select('skill')
+    .eq('tenant_id', tenantId)
+    .eq('is_published', true)
+  
+  if (!data) return []
+  
+  const skills = new Set(data.map((c: any) => c.skill).filter((s: string) => s && s.trim() !== ''))
+  return Array.from(skills)
 }
