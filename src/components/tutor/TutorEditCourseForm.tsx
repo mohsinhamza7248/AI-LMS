@@ -148,7 +148,9 @@ export default function TutorEditCourseForm({
   // ── Category & Skill
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
   const [selectedCategory, setSelectedCategory] = useState(course.category_id || '')
-  const [selectedSkill, setSelectedSkill] = useState(course.skill || '')
+  const isPredefinedSkill = SKILL_OPTIONS.some(opt => opt.value === course.skill && opt.value !== '' && opt.value !== 'other')
+  const [selectedSkill, setSelectedSkill] = useState(isPredefinedSkill ? (course.skill || '') : (course.skill ? 'other' : ''))
+  const [customSkill, setCustomSkill] = useState(isPredefinedSkill ? '' : (course.skill || ''))
 
   useEffect(() => {
     fetch('/api/categories')
@@ -195,7 +197,7 @@ export default function TutorEditCourseForm({
         is_published: isPublished,
         is_live: isLive,
         category_id: selectedCategory || null,
-        skill: selectedSkill || null,
+        skill: selectedSkill === 'other' ? customSkill : (selectedSkill || null),
       })
       setDetailsMsg({ ok: true, text: 'Course details saved!' })
       router.refresh()
@@ -228,7 +230,7 @@ export default function TutorEditCourseForm({
           is_live: isLive,
           thumbnail_url: url,
           category_id: selectedCategory || null,
-          skill: selectedSkill || null,
+          skill: selectedSkill === 'other' ? customSkill : (selectedSkill || null),
         })
         router.refresh()
       } catch (err: any) {
@@ -237,7 +239,7 @@ export default function TutorEditCourseForm({
         setThumbUploading(false)
       }
     },
-    [course.id, title, description, price, isPublished, isLive, selectedCategory, selectedSkill, router]
+    [course.id, title, description, price, isPublished, isLive, selectedCategory, selectedSkill, customSkill, router]
   )
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -522,7 +524,10 @@ export default function TutorEditCourseForm({
                       </Label>
                       <select
                         value={selectedSkill}
-                        onChange={(e) => setSelectedSkill(e.target.value)}
+                        onChange={(e) => {
+                          setSelectedSkill(e.target.value)
+                          if (e.target.value !== 'other') setCustomSkill('')
+                        }}
                         className={selectClass}
                       >
                         {SKILL_OPTIONS.map((opt) => (
@@ -531,10 +536,23 @@ export default function TutorEditCourseForm({
                           </option>
                         ))}
                       </select>
+
+                      {selectedSkill === 'other' && (
+                        <div className="mt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                          <Input
+                            value={customSkill}
+                            onChange={(e) => setCustomSkill(e.target.value)}
+                            placeholder="Enter skill name (e.g. Pottery)"
+                            className="h-10 rounded-xl focus-visible:ring-primary/20"
+                            required
+                          />
+                        </div>
+                      )}
+
                       {selectedSkill && (
                         <div className="mt-2">
                           <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 px-3 py-1 text-xs font-semibold">
-                            {SKILL_OPTIONS.find(s => s.value === selectedSkill)?.label || selectedSkill}
+                            {SKILL_OPTIONS.find(s => s.value === selectedSkill)?.label || customSkill}
                           </span>
                         </div>
                       )}

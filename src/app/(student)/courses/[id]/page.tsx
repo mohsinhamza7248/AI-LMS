@@ -1,6 +1,7 @@
 import { Navbar } from '@/components/navigation/Navbar'
 import { getCourseById } from '@/services/course.service'
 import { Play, CheckCircle, ShieldCheck, Globe, Tag, Sparkles } from 'lucide-react'
+import { getYouTubeId, getVimeoId } from '@/lib/video-utils'
 import Link from 'next/link'
 import { notFound } from 'next/navigation'
 import { EnrollButton } from '@/components/courses/EnrollButton'
@@ -96,14 +97,6 @@ export default async function CourseDetailPage({ params }: { params: Promise<{ i
             {(() => {
               const firstVideo = course.course_content?.[0]
               if (firstVideo?.url) {
-                const getYouTubeId = (url: string) => {
-                  const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/)
-                  return match ? match[1] : null
-                }
-                const getVimeoId = (url: string) => {
-                  const match = url.match(/(?:vimeo\.com\/|player\.vimeo\.com\/video\/)(\d+)/)
-                  return match ? match[1] : null
-                }
                 const ytId = getYouTubeId(firstVideo.url)
                 const vimeoId = getVimeoId(firstVideo.url)
 
