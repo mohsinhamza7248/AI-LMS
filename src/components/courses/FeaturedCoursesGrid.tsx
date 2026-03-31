@@ -2,16 +2,12 @@
 
 import { useState } from 'react'
 import { ArrowRight, Star, Zap, X, Play } from 'lucide-react'
+import { getYouTubeId } from '@/lib/video-utils'
 import Link from 'next/link'
 
 export function FeaturedCoursesGrid({ courses }: { courses: any[] }) {
   const [selectedVideo, setSelectedVideo] = useState<string | null>(null)
 
-  const getYoutubeId = (url: string) => {
-    const regExp = /^.*(youtu.be\/|v\/|u\/\w\/|embed\/|watch\?v=|&v=)([^#&?]*).*/
-    const match = url?.match(regExp)
-    return match && match[2].length === 11 ? match[2] : null
-  }
 
   return (
     <>
@@ -89,7 +85,7 @@ export function FeaturedCoursesGrid({ courses }: { courses: any[] }) {
             <iframe
               width="100%"
               height="100%"
-              src={`https://www.youtube.com/embed/${getYoutubeId(selectedVideo)}?autoplay=1`}
+              src={`https://www.youtube.com/embed/${getYouTubeId(selectedVideo)}?autoplay=1`}
               title="YouTube video player"
               frameBorder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"

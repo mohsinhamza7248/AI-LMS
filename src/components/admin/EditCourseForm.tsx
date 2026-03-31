@@ -148,7 +148,9 @@ export default function EditCourseForm({
   // ── Category & Skill
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
   const [selectedCategory, setSelectedCategory] = useState(course.category_id || '')
-  const [selectedSkill, setSelectedSkill] = useState(course.skill || '')
+  const isPredefinedSkill = SKILL_OPTIONS.some(opt => opt.value === course.skill && opt.value !== '' && opt.value !== 'other')
+  const [selectedSkill, setSelectedSkill] = useState(isPredefinedSkill ? (course.skill || '') : (course.skill ? 'other' : ''))
+  const [customSkill, setCustomSkill] = useState(isPredefinedSkill ? '' : (course.skill || ''))
 
   useEffect(() => {
     fetch('/api/categories')
@@ -195,7 +197,7 @@ export default function EditCourseForm({
         is_published: isPublished,
         is_live: isLive,
         category_id: selectedCategory || null,
-        skill: selectedSkill || null,
+        skill: selectedSkill === 'other' ? customSkill : (selectedSkill || null),
       })
       setDetailsMsg({ ok: true, text: 'Course details saved!' })
       router.refresh()
@@ -228,7 +230,7 @@ export default function EditCourseForm({
           is_live: isLive,
           thumbnail_url: url,
           category_id: selectedCategory || null,
-          skill: selectedSkill || null,
+          skill: selectedSkill === 'other' ? customSkill : (selectedSkill || null),
         })
         router.refresh()
       } catch (err: any) {
@@ -237,7 +239,7 @@ export default function EditCourseForm({
         setThumbUploading(false)
       }
     },
-    [course.id, title, description, price, isPublished, isLive, selectedCategory, selectedSkill, router]
+    [course.id, title, description, price, isPublished, isLive, selectedCategory, selectedSkill, customSkill, router]
   )
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -408,6 +410,63 @@ export default function EditCourseForm({
                     />
                   </div>
 
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6 pt-2">
+                    {/* Category */}
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        <Tag className="h-3.5 w-3.5" /> Category
+                      </Label>
+                      <select
+                        value={selectedCategory}
+                        onChange={(e) => setSelectedCategory(e.target.value)}
+                        className={selectClass}
+                      >
+                        <option value="">— No category —</option>
+                        {categories.map((cat) => (
+                          <option key={cat.id} value={cat.id}>
+                            {cat.name}
+                          </option>
+                        ))}
+                      </select>
+                      {categories.length === 0 && (
+                        <p className="text-[10px] text-muted-foreground italic">No categories found for this tenant.</p>
+                      )}
+                    </div>
+
+                    {/* Skill */}
+                    <div className="space-y-2">
+                      <Label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
+                        <Sparkles className="h-3.5 w-3.5" /> Skill
+                      </Label>
+                      <select
+                        value={selectedSkill}
+                        onChange={(e) => {
+                          setSelectedSkill(e.target.value)
+                          if (e.target.value !== 'other') setCustomSkill('')
+                        }}
+                        className={selectClass}
+                      >
+                        {SKILL_OPTIONS.map((opt) => (
+                          <option key={opt.value} value={opt.value}>
+                            {opt.label}
+                          </option>
+                        ))}
+                      </select>
+
+                      {selectedSkill === 'other' && (
+                        <div className="mt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                          <Input
+                            value={customSkill}
+                            onChange={(e) => setCustomSkill(e.target.value)}
+                            placeholder="Enter skill name (e.g. Pottery)"
+                            className="h-10 rounded-xl focus-visible:ring-primary/20"
+                            required
+                          />
+                        </div>
+                      )}
+                    </div>
+                  </div>
+
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
                     <div className="space-y-6">
                       <div className="flex items-center justify-between p-4 rounded-2xl bg-muted/30 border border-border/40">
@@ -470,82 +529,6 @@ export default function EditCourseForm({
                 </CardFooter>
               </Card>
 
-              {/* ── Category & Skill Card ── */}
-              <Card className="border-border/60 shadow-md">
-                <CardHeader>
-                  <div className="flex items-center gap-2 mb-1">
-                    <div className="p-2 rounded-lg bg-violet-500/10 text-violet-600 dark:text-violet-400">
-                      <Sparkles className="h-5 w-5" />
-                    </div>
-                    <CardTitle className="text-xl">Category & Skill</CardTitle>
-                  </div>
-                  <CardDescription>
-                    Tag this course so students can filter and discover it easily.
-                  </CardDescription>
-                </CardHeader>
-                <Separator />
-                <CardContent className="pt-6">
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-                    {/* Category */}
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        <Tag className="h-3.5 w-3.5" /> Category
-                      </Label>
-                      <select
-                        value={selectedCategory}
-                        onChange={(e) => setSelectedCategory(e.target.value)}
-                        className={selectClass}
-                      >
-                        <option value="">— No category —</option>
-                        {categories.map((cat) => (
-                          <option key={cat.id} value={cat.id}>
-                            {cat.name}
-                          </option>
-                        ))}
-                      </select>
-                      {categories.length === 0 && (
-                        <p className="text-[10px] text-muted-foreground italic">No categories found for this tenant.</p>
-                      )}
-                      {selectedCategory && categories.length > 0 && (
-                        <div className="mt-2">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-blue-500/10 text-blue-600 dark:text-blue-400 border border-blue-500/20 px-3 py-1 text-xs font-semibold">
-                            📂 {categories.find(c => c.id === selectedCategory)?.name}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Skill */}
-                    <div className="space-y-2">
-                      <Label className="flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider text-muted-foreground">
-                        <Sparkles className="h-3.5 w-3.5" /> Skill
-                      </Label>
-                      <select
-                        value={selectedSkill}
-                        onChange={(e) => setSelectedSkill(e.target.value)}
-                        className={selectClass}
-                      >
-                        {SKILL_OPTIONS.map((opt) => (
-                          <option key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </option>
-                        ))}
-                      </select>
-                      {selectedSkill && (
-                        <div className="mt-2">
-                          <span className="inline-flex items-center gap-1 rounded-full bg-violet-500/10 text-violet-600 dark:text-violet-400 border border-violet-500/20 px-3 py-1 text-xs font-semibold">
-                            {SKILL_OPTIONS.find(s => s.value === selectedSkill)?.label || selectedSkill}
-                          </span>
-                        </div>
-                      )}
-                    </div>
-                  </div>
-
-                  <p className="text-[11px] text-muted-foreground mt-5 italic">
-                    Changes take effect after you click <strong>Save All Changes</strong> above.
-                  </p>
-                </CardContent>
-              </Card>
             </div>
 
             {/* RIGHT COLUMN – Thumbnail ── */}

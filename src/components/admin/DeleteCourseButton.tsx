@@ -43,15 +43,17 @@ export function DeleteCourseButton({ courseId, courseTitle }: { courseId: string
 
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger asChild>
-        <button
-          className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
-          title="Delete Course"
-          disabled={isDeleting}
-        >
-          <Trash2 className="h-3.5 w-3.5" />
-        </button>
-      </AlertDialogTrigger>
+      <AlertDialogTrigger
+        render={
+          <button
+            className="flex h-8 w-8 items-center justify-center rounded-lg border border-red-500/20 text-red-600 dark:text-red-400 hover:bg-red-500/10 transition-colors disabled:opacity-50"
+            title="Delete Course"
+            disabled={isDeleting}
+          >
+            <Trash2 className="h-3.5 w-3.5" />
+          </button>
+        }
+      />
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>

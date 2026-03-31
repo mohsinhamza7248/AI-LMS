@@ -2,6 +2,7 @@
 
 import { useState } from 'react'
 import { Play, FileText, CheckCircle, ChevronRight, Lock } from 'lucide-react'
+import { getYouTubeId, getVimeoId } from '@/lib/video-utils'
 
 interface CoursePlayerProps {
   course: any
@@ -11,16 +12,6 @@ interface CoursePlayerProps {
 export function CoursePlayer({ course, enrollment }: CoursePlayerProps) {
   const [activeLecture, setActiveLecture] = useState(course.course_content?.[0] || null)
 
-  const getYouTubeId = (url: string) => {
-    if (!url) return null
-    const match = url.match(/(?:youtu\.be\/|youtube\.com\/(?:embed\/|v\/|watch\?v=|watch\?.+&v=))([^&?]+)/)
-    return match ? match[1] : null
-  }
-  const getVimeoId = (url: string) => {
-    if (!url) return null
-    const match = url.match(/(?:vimeo\.com\/|player\.vimeo\.com\/video\/)(\d+)/)
-    return match ? match[1] : null
-  }
 
   const ytId = activeLecture?.url ? getYouTubeId(activeLecture.url) : null
   const vimeoId = activeLecture?.url ? getVimeoId(activeLecture.url) : null

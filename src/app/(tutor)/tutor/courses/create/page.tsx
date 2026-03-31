@@ -27,6 +27,7 @@ export default function CreateCoursePage() {
   const [categories, setCategories] = useState<{ id: string; name: string }[]>([])
   const [selectedCategory, setSelectedCategory] = useState('')
   const [selectedSkill, setSelectedSkill] = useState('')
+  const [customSkill, setCustomSkill] = useState('')
 
   // Fetch categories for dropdown
   useEffect(() => {
@@ -52,7 +53,7 @@ export default function CreateCoursePage() {
         description,
         price,
         category_id: selectedCategory || null,
-        skill: selectedSkill || null,
+        skill: selectedSkill === 'other' ? customSkill : selectedSkill || null,
       })
       router.push(`/tutor/courses/${courseId}`)
     } catch (err: any) {
@@ -168,7 +169,10 @@ export default function CreateCoursePage() {
                   <select
                     id="skill"
                     value={selectedSkill}
-                    onChange={(e) => setSelectedSkill(e.target.value)}
+                    onChange={(e) => {
+                      setSelectedSkill(e.target.value)
+                      if (e.target.value !== 'other') setCustomSkill('')
+                    }}
                     className={selectClass}
                   >
                     {SKILL_OPTIONS.map((opt) => (
@@ -177,6 +181,19 @@ export default function CreateCoursePage() {
                       </option>
                     ))}
                   </select>
+
+                  {selectedSkill === 'other' && (
+                    <div className="mt-2 animate-in fade-in slide-in-from-top-1 duration-200">
+                      <input
+                        type="text"
+                        value={customSkill}
+                        onChange={(e) => setCustomSkill(e.target.value)}
+                        placeholder="Enter skill name (e.g. Pottery)"
+                        className={inputClass}
+                        required
+                      />
+                    </div>
+                  )}
                 </div>
               </div>
 
