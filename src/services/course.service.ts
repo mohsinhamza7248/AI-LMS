@@ -2,7 +2,7 @@ import { createAdminClient } from '@/lib/supabase/admin'
 import { createClient } from '@/lib/supabase/server'
 import { Course } from '@/types/database.types'
 
-export async function getCoursesByTenant(tenantId: string, options?: {
+export async function getCoursesByTenant(tenantId?: string | null, options?: {
   categoryId?: string
   limit?: number
   offset?: number
@@ -18,7 +18,10 @@ export async function getCoursesByTenant(tenantId: string, options?: {
       categories(id, name),
       tutors(id, bio, users(id, name, avatar_url))
     `)
-    .eq('tenant_id', tenantId)
+
+  if (tenantId) {
+    query = query.eq('tenant_id', tenantId)
+  }
 
   if (options?.published !== false) {
     query = query.eq('is_published', true)
@@ -59,7 +62,7 @@ export async function getCourseById(id: string) {
 }
 
 export async function createCourse(course: Omit<Course, 'id' | 'created_at' | 'updated_at'>) {
-  const supabase = await createClient()
+  const supabase = (await createClient()) as any
   const { data, error } = await supabase
     .from('courses')
     .insert(course)
@@ -70,7 +73,7 @@ export async function createCourse(course: Omit<Course, 'id' | 'created_at' | 'u
 }
 
 export async function updateCourse(id: string, updates: Partial<Course>) {
-  const supabase = await createClient()
+  const supabase = (await createClient()) as any
   const { data, error } = await supabase
     .from('courses')
     .update({ ...updates, updated_at: new Date().toISOString() })
@@ -87,7 +90,7 @@ export async function deleteCourse(id: string) {
   if (error) throw error
 }
 
-export async function getFeaturedCourses(tenantId: string, limit = 6) {
+export async function getFeaturedCourses(tenantId?: string | null, limit = 6) {
   return getCoursesByTenant(tenantId, { limit, published: true })
 }
 
@@ -129,23 +132,33 @@ export async function getEnrolledCourses(userId: string) {
   }))
 }
 
-export async function getCategoriesByTenant(tenantId: string) {
+export async function getCategoriesByTenant(tenantId?: string | null) {
   const supabase = createAdminClient() as any
-  const { data } = await supabase
+  let query = supabase
     .from('categories')
     .select('id, name, slug')
-    .eq('tenant_id', tenantId)
     .order('name')
+    
+  if (tenantId) {
+    query = query.eq('tenant_id', tenantId)
+  }
+  
+  const { data } = await query
   return data || []
 }
 
-export async function getAvailableSkills(tenantId: string) {
+export async function getAvailableSkills(tenantId?: string | null) {
   const supabase = createAdminClient() as any
-  const { data } = await supabase
+  let query = supabase
     .from('courses')
     .select('skill')
-    .eq('tenant_id', tenantId)
     .eq('is_published', true)
+    
+  if (tenantId) {
+    query = query.eq('tenant_id', tenantId)
+  }
+  
+  const { data } = await query
   
   if (!data) return []
   
