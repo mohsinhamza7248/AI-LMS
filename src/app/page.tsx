@@ -11,11 +11,7 @@ import { ParticlesBg } from '@/components/ui/ParticlesBg'
 
 export default async function HomePage() {
   const tenant = await getActiveTenant()
-  let featuredCourses: any[] = []
-
-  if (tenant) {
-    featuredCourses = await getFeaturedCourses(tenant.id, 3)
-  }
+  const featuredCourses = await getFeaturedCourses(tenant?.id, 3)
 
   // Fallback dummy data if no courses are published yet
   const fallbackCourses = [

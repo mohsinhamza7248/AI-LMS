@@ -2,17 +2,20 @@ import { headers } from 'next/headers'
 import { getTenantBySlug } from '@/services/tenant.service'
 
 export async function getActiveTenant() {
+  // 1. Environment Variable Override (Best for Vercel custom deployments)
+  if (process.env.NEXT_PUBLIC_DEFAULT_TENANT_SLUG) {
+    const overrideTenant = await getTenantBySlug(process.env.NEXT_PUBLIC_DEFAULT_TENANT_SLUG)
+    if (overrideTenant) return overrideTenant
+  }
+
   const headerList = await headers()
   const host = headerList.get('host') || ''
   
   // Example: demo.lms.com or localhost:3000/?tenant=demo
-  // For now, let's use a simple slug from the hostname or default to 'default'
   const domain = host.split(':')[0]
   const subdomain = domain.split('.')[0]
   
-  // If subdomain is 'localhost' or 'www', we might want to use a query param or default
   if (subdomain === 'localhost' || subdomain === 'www') {
-    // In dev, you could use a hardcoded slug or query param logic
     const tenant = await getTenantBySlug('demo')
     if (tenant) return tenant
 
@@ -23,5 +26,6 @@ export async function getActiveTenant() {
     return firstTenant
   }
 
+  // Uses 'ai-lms-zeta-nine' from 'ai-lms-zeta-nine.vercel.app'
   return await getTenantBySlug(subdomain)
 }
