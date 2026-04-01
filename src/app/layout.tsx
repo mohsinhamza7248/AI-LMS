@@ -6,13 +6,13 @@ import { ThemeProvider } from '@/components/providers/theme-provider'
 import { Toaster } from '@/components/ui/toaster'
 import { cn } from "@/lib/utils";
 
-const geist = Geist({subsets:['latin'],variable:'--font-sans'});
+const geist = Geist({ subsets: ['latin'], variable: '--font-sans' });
 
 const inter = Inter({ subsets: ['latin'] })
 
 export const metadata: Metadata = {
-  title: 'Parth LMS | AI-Powered Learning Platform',
-  description: 'Production-grade multi-tenant AI LMS SaaS.',
+  title: 'Parth Gautam Foundation | AI-Powered Learning Platform',
+  description: 'Production-grade .',
 }
 
 export default function RootLayout({

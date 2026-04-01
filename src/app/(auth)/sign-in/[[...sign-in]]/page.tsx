@@ -158,11 +158,11 @@ export default function SignInPage() {
                   </>
                 )}
               </h1>
-              <p className="text-sm font-medium text-muted-foreground/80 max-w-[260px] mx-auto leading-relaxed">
-                {verifying
-                  ? `Enter the 6-digit code sent to ${phone}`
-                  : 'Enter your phone number to continue your learning journey.'}
-              </p>
+                <p className="text-sm font-medium text-muted-foreground max-w-[260px] mx-auto leading-relaxed">
+                  {verifying
+                    ? `Enter the 6-digit code sent to ${phone}`
+                    : 'Enter your phone number to continue your learning journey.'}
+                </p>
             </div>
           </div>
 
@@ -176,11 +176,11 @@ export default function SignInPage() {
           {!verifying ? (
             <form onSubmit={handlePhoneSubmit} className="space-y-6">
               <div className="space-y-3">
-                <label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70 ml-1">
+                <label htmlFor="phone" className="text-xs font-bold uppercase tracking-wider text-foreground/70 ml-1">
                   Phone Number
                 </label>
                 <div className="relative group">
-                  <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-muted-foreground/50 group-focus-within:text-primary transition-colors">
+                  <div className="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none text-muted-foreground/70 group-focus-within:text-primary transition-colors">
                     <Phone className="h-4 w-4" />
                   </div>
                   <input
@@ -190,7 +190,7 @@ export default function SignInPage() {
                     value={phone}
                     onChange={(e) => setPhone(e.target.value)}
                     required
-                    className="w-full rounded-2xl border border-border/60 bg-muted/5 pl-11 pr-5 py-4 text-sm text-foreground placeholder-muted-foreground/40 transition-all focus:border-primary/50 focus:bg-background focus:outline-none focus:ring-4 focus:ring-primary/5"
+                    className="w-full rounded-2xl border border-border/60 bg-muted/5 pl-11 pr-5 py-4 text-sm text-foreground placeholder-muted-foreground/70 transition-all focus:border-primary/50 focus:bg-background focus:outline-none focus:ring-4 focus:ring-primary/5"
                   />
                 </div>
               </div>
@@ -212,14 +212,14 @@ export default function SignInPage() {
 
               <div className="mt-8 flex items-center justify-center gap-2">
                 <div className="h-px flex-1 bg-border/40" />
-                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/40 px-2">Safe & Secure</span>
+                <span className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground/70 px-2">Safe & Secure</span>
                 <div className="h-px flex-1 bg-border/40" />
               </div>
             </form>
           ) : (
             <form onSubmit={handleVerifySubmit} className="space-y-6">
               <div className="space-y-3">
-                <label htmlFor="code" className="text-xs font-bold uppercase tracking-wider text-muted-foreground/70 ml-1">
+                <label htmlFor="code" className="text-xs font-bold uppercase tracking-wider text-foreground/70 ml-1">
                   Verification Code
                 </label>
                 <div className="relative">
@@ -252,7 +252,7 @@ export default function SignInPage() {
                   setCode('')
                   setError('')
                 }}
-                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-muted-foreground/60 transition-colors hover:bg-muted/10 hover:text-foreground"
+                className="mt-4 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-bold text-muted-foreground/80 transition-colors hover:bg-muted/10 hover:text-foreground"
               >
                 <ArrowLeft className="h-4 w-4" />
                 Change Phone Number
@@ -262,8 +262,8 @@ export default function SignInPage() {
         </div>
 
         {/* Footer info */}
-        <p className="mt-8 text-center text-[11px] font-medium text-muted-foreground/50">
-          By continuing, you agree to our <span className="underline hover:text-primary transition-colors cursor-pointer">Terms of Service</span> and <span className="underline hover:text-primary transition-colors cursor-pointer">Privacy Policy</span>.
+        <p className="mt-8 text-center text-[11px] font-medium text-muted-foreground/80">
+          By continuing, you agree to our <span className="underline hover:text-primary transition-colors cursor-pointer text-foreground/90">Terms of Service</span> and <span className="underline hover:text-primary transition-colors cursor-pointer text-foreground/90">Privacy Policy</span>.
         </p>
       </div>
     </div>

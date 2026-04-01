@@ -74,7 +74,7 @@ export function Footer() {
         <Separator className="mb-8 opacity-50" />
 
         <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-muted-foreground">
-          <p>© {new Date().getFullYear()} Parth LMS. All rights reserved.</p>
+          <p>© {new Date().getFullYear()} Parth Gautam Foundation. All rights reserved.</p>
           <div className="flex items-center gap-1.5 font-medium">
             Crafted with <Sparkles className="h-3.5 w-3.5 text-primary" /> for the future of learning
           </div>
