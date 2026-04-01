@@ -70,8 +70,8 @@ export function Navbar() {
       <nav
         className={cn(
           'fixed top-0 z-50 w-full transition-all duration-300',
-          scrolled
-            ? 'border-b border-border/60 bg-background/80 backdrop-blur-xl shadow-sm'
+          (scrolled || pathname !== '/')
+            ? 'border-b border-border/50 bg-background/70 backdrop-blur-xl shadow-sm'
             : 'bg-transparent'
         )}
       >
@@ -96,16 +96,27 @@ export function Navbar() {
 
           {/* Desktop Links */}
           <div className="hidden md:flex items-center justify-center flex-1 gap-8 ml-8">
-            {links.map((link) => (
-              <Link
-                key={link.href}
-                href={link.href}
-                className="flex items-center gap-2 text-sm font-semibold tracking-wide text-muted-foreground transition-colors hover:text-primary"
-              >
-                <link.icon className="h-4 w-4" />
-                {link.label}
-              </Link>
-            ))}
+            {links.map((link) => {
+              const isActive = pathname === link.href;
+              return (
+                <Link
+                  key={link.href}
+                  href={link.href}
+                  className={cn(
+                    "relative flex items-center gap-2 text-sm font-semibold tracking-wide transition-all duration-200 py-1 px-1",
+                    isActive 
+                      ? "text-primary" 
+                      : "text-muted-foreground hover:text-primary"
+                  )}
+                >
+                  <link.icon className={cn("h-4 w-4 transition-transform", isActive && "scale-110")} />
+                  {link.label}
+                  {isActive && (
+                    <span className="absolute -bottom-[21px] left-0 right-0 h-[2px] bg-primary rounded-t-full shadow-[0_-1px_4px_rgba(var(--primary),0.2)]" />
+                  )}
+                </Link>
+              );
+            })}
           </div>
 
           {/* Action Buttons */}

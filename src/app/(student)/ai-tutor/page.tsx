@@ -7,6 +7,8 @@ import { Send, Bot, User, Paperclip, Sparkles } from 'lucide-react'
 import { Avatar, AvatarFallback } from '@/components/ui/avatar'
 import { Badge } from '@/components/ui/badge'
 import { cn } from '@/lib/utils'
+import ReactMarkdown from 'react-markdown'
+import remarkGfm from 'remark-gfm'
 
 export default function AiTutorPage() {
   const [messages, setMessages] = useState([
@@ -52,16 +54,19 @@ export default function AiTutorPage() {
       <Navbar />
 
       {/* Chat area */}
-      <div className="flex-1 overflow-y-auto pt-20 pb-36">
-        <div className="max-w-2xl mx-auto px-4 py-6 space-y-6">
+      <div className="flex-1 overflow-y-auto pt-20 pb-40">
+        <div className="max-w-2xl mx-auto px-4 py-8 space-y-8">
           {/* Welcome header (shown on first load) */}
           {messages.length === 1 && (
-            <div className="text-center py-8 animate-in fade-in duration-500">
-              <div className="flex h-16 w-16 mx-auto mb-4 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                <Sparkles className="h-8 w-8" />
+            <div className="text-center py-12 animate-in fade-in slide-in-from-top-4 duration-700">
+              <div className="relative inline-flex mb-6">
+                <div className="absolute inset-0 rounded-2xl bg-primary/20 blur-xl animate-pulse" />
+                <div className="relative flex h-20 w-20 items-center justify-center rounded-2xl bg-linear-to-br from-primary to-primary/60 text-primary-foreground shadow-2xl shadow-primary/20">
+                  <Sparkles className="h-10 w-10" />
+                </div>
               </div>
-              <h1 className="text-xl font-bold mb-1">AI Tutor</h1>
-              <p className="text-sm text-muted-foreground">Powered by Gemini · Ask anything about your studies</p>
+              <h1 className="text-3xl font-extrabold tracking-tight mb-2 bg-linear-to-r from-foreground to-foreground/70 bg-clip-text text-transparent">AI Tutor</h1>
+              <p className="text-base text-muted-foreground max-w-[280px] mx-auto font-medium">Your personal 24/7 learning companion powered by Gemini.</p>
             </div>
           )}
 
@@ -95,12 +100,52 @@ export default function AiTutorPage() {
                   {m.role === 'assistant' ? 'AI Tutor' : 'You'}
                 </p>
                 <div className={cn(
-                  'rounded-2xl px-4 py-3 text-sm leading-relaxed whitespace-pre-wrap',
+                  'rounded-2xl px-5 py-4 text-[15px] leading-relaxed shadow-sm transition-all',
                   m.role === 'assistant'
-                    ? 'bg-card border border-border/60 text-foreground rounded-tl-sm'
-                    : 'bg-primary text-primary-foreground rounded-tr-sm'
+                    ? 'bg-card border border-border/80 text-foreground rounded-tl-sm hover:shadow-md'
+                    : 'bg-primary text-primary-foreground rounded-tr-sm shadow-primary/10 hover:shadow-primary/20'
                 )}>
-                  {m.content}
+                  {m.role === 'assistant' ? (
+                    <ReactMarkdown
+                      remarkPlugins={[remarkGfm]}
+                      components={{
+                        h1: ({ children }) => <h1 className="text-lg font-bold mb-2 mt-1">{children}</h1>,
+                        h2: ({ children }) => <h2 className="text-base font-bold mb-1.5 mt-2">{children}</h2>,
+                        h3: ({ children }) => <h3 className="text-sm font-semibold mb-1 mt-2">{children}</h3>,
+                        p: ({ children }) => <p className="mb-2 last:mb-0 leading-relaxed">{children}</p>,
+                        ul: ({ children }) => <ul className="list-disc pl-5 mb-2 space-y-0.5">{children}</ul>,
+                        ol: ({ children }) => <ol className="list-decimal pl-5 mb-2 space-y-0.5">{children}</ol>,
+                        li: ({ children }) => <li className="leading-relaxed">{children}</li>,
+                        strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                        em: ({ children }) => <em className="italic">{children}</em>,
+                        code: ({ inline, children }: { inline?: boolean; children?: React.ReactNode }) =>
+                          inline ? (
+                            <code className="bg-muted text-primary font-mono text-xs px-1.5 py-0.5 rounded">{children}</code>
+                          ) : (
+                            <code className="block bg-muted font-mono text-xs p-3 rounded-lg overflow-x-auto my-2 whitespace-pre">{children}</code>
+                          ),
+                        pre: ({ children }) => <>{children}</>,
+                        blockquote: ({ children }) => (
+                          <blockquote className="border-l-2 border-primary/40 pl-3 italic text-muted-foreground my-2">{children}</blockquote>
+                        ),
+                        table: ({ children }) => (
+                          <div className="overflow-x-auto my-2">
+                            <table className="text-xs border-collapse w-full">{children}</table>
+                          </div>
+                        ),
+                        th: ({ children }) => <th className="border border-border px-2 py-1 bg-muted font-semibold text-left">{children}</th>,
+                        td: ({ children }) => <td className="border border-border px-2 py-1">{children}</td>,
+                        hr: () => <hr className="border-border my-3" />,
+                        a: ({ href, children }) => (
+                          <a href={href} target="_blank" rel="noopener noreferrer" className="text-primary underline underline-offset-2 hover:opacity-80">{children}</a>
+                        ),
+                      }}
+                    >
+                      {m.content}
+                    </ReactMarkdown>
+                  ) : (
+                    m.content
+                  )}
                 </div>
               </div>
             </div>
@@ -145,9 +190,9 @@ export default function AiTutorPage() {
               className="w-full pl-5 pr-24 py-4 bg-transparent border-none focus:outline-none resize-none text-sm min-h-[54px] placeholder:text-muted-foreground/50"
             />
             <div className="absolute right-3 bottom-3 flex items-center gap-1.5">
-              <button className="flex h-8 w-8 items-center justify-center rounded-xl hover:bg-muted text-muted-foreground transition-colors">
+              {/* <button className="flex h-8 w-8 items-center justify-center rounded-xl hover:bg-muted text-muted-foreground transition-colors">
                 <Paperclip className="h-4 w-4" />
-              </button>
+              </button> */}
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || isLoading}
