@@ -10,8 +10,8 @@ export async function chatWithTutor(query: string) {
 
   try {
     const { text: answer } = await generateText({
-      model: google('gemini-2.0-flash') as any,
-      system: `You are an expert AI Tutor and experienced teacher. Always maintain a professional, encouraging, and educational tone. Focus your responses on answering the student's study-related questions comprehensively.`,
+      model: google('gemini-2.5-flash') as any,
+      system: `You are an AI Tutor. Answer study questions concisely and professionally.`,
       prompt: query,
     })
 
@@ -31,8 +31,8 @@ export async function generateVoiceResponse(transcript: string) {
 
   try {
     const { text: answer } = await generateText({
-      model: google('gemini-2.0-flash') as any,
-      system: `You are an expert AI Tutor and experienced teacher. Always maintain a professional, encouraging, and educational tone. Focus your responses on answering the student's study-related questions comprehensively.`,
+      model: google('gemini-2.5-flash') as any,
+      system: `You are an AI Tutor. Answer study questions concisely and professionally.`,
       prompt: transcript,
     })
 

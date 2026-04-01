@@ -36,9 +36,9 @@ export function Footer() {
             </p>
             <div className="flex items-center gap-2 pt-1">
               {[
-                { icon: Github, href: '#' },
-                { icon: Twitter, href: '#' },
-                { icon: Linkedin, href: '#' },
+                { icon: Github, href: '#github' },
+                { icon: Twitter, href: '#twitter' },
+                { icon: Linkedin, href: '#linkedin' },
               ].map(({ icon: Icon, href }) => (
                 <a
                   key={href}
