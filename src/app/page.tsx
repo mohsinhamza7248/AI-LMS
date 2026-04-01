@@ -122,18 +122,19 @@ export default async function HomePage() {
             </div>
 
             {/* Right – hero image */}
-            <div className="relative animate-in fade-in slide-in-from-right duration-700 delay-200">
-              <div className="relative h-[320px] w-full lg:h-[420px]">
-                <div className="relative h-full w-full overflow-hidden rounded-3xl shadow-2xl ring-1 ring-border/30">
+            <div className="relative animate-in fade-in slide-in-from-right duration-700 delay-200 group">
+              <div className="relative aspect-[16/10] w-full max-w-[650px] mx-auto lg:max-w-none">
+                <div className="relative h-full w-full overflow-hidden rounded-3xl shadow-2xl ring-1 ring-border/30 transition-transform duration-500 group-hover:scale-[1.02] bg-[#fdfcfb]">
                   <img
-                    src="/home-page.jpg"
-                    alt="Students studying"
-                    className="h-full w-full object-cover"
+                    src="/parth-gautam-umesh-gautam.png"
+                    alt="Parth Gautam Foundation"
+                    className="h-full w-full object-contain"
                   />
-                  <div className="absolute inset-0 bg-linear-to-t from-black/30 to-transparent" />
+                  {/* Subtle vignette for a premium look */}
+                  {/* <div className="absolute inset-0 bg-radial-[circle_at_center,transparent_0%,rgba(0,0,0,0.02)_100%] pointer-events-none" /> */}
                 </div>
                 {/* Floating stats card */}
-                <div className="absolute -bottom-6 -left-6 rounded-2xl border border-border/60 bg-card/90 backdrop-blur-md p-4 shadow-xl animate-in zoom-in duration-700 delay-500">
+                <div className="absolute -bottom-6 -left-6 rounded-2xl border border-border/60 bg-card/90 backdrop-blur-md p-4 shadow-xl animate-in zoom-in duration-700 delay-500 group-hover:-translate-y-1 transition-transform z-10">
                   <div className="flex items-center gap-3">
                     <div className="flex h-10 w-10 items-center justify-center rounded-full bg-primary/10 text-primary">
                       <Users className="h-5 w-5" />
