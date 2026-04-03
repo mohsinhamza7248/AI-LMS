@@ -31,6 +31,11 @@ export default function AiTutorPage() {
   const [isLoading, setIsLoading] = useState(false)
   const bottomRef = useRef<HTMLDivElement>(null)
   const textareaRef = useRef<HTMLTextAreaElement>(null)
+  // Keep a ref so callbacks always see the latest values without re-creating
+  const inputRef = useRef(input)
+  const isLoadingRef = useRef(isLoading)
+  useEffect(() => { inputRef.current = input }, [input])
+  useEffect(() => { isLoadingRef.current = isLoading }, [isLoading])
 
   useEffect(() => {
     bottomRef.current?.scrollIntoView({ behavior: 'smooth' })
@@ -44,15 +49,16 @@ export default function AiTutorPage() {
     ta.style.height = Math.min(ta.scrollHeight, 160) + 'px'
   }, [input])
 
-  const handleSend = useCallback(async (overrideQuery?: string) => {
-    const query = (overrideQuery ?? input).trim()
-    if (!query || isLoading) return
+  // Shared async send logic — used by both the send button and voice input
+  const sendQuery = useCallback(async (query: string, isVoice = false) => {
+    const trimmed = query.trim()
+    if (!trimmed || isLoadingRef.current) return
 
     const userMessage: AiMessage = {
       role: 'user',
-      content: query,
+      content: trimmed,
       sources: [],
-      isVoice: !!overrideQuery && overrideQuery !== input,
+      isVoice,
       timestamp: new Date(),
     }
     setMessages(prev => [...prev, userMessage])
@@ -60,7 +66,7 @@ export default function AiTutorPage() {
     setIsLoading(true)
 
     try {
-      const response = await chatWithTutor(query)
+      const response = await chatWithTutor(trimmed)
       const aiMessage: AiMessage = {
         role: 'assistant',
         content: response.answer,
@@ -75,7 +81,7 @@ export default function AiTutorPage() {
         ...prev,
         {
           role: 'assistant',
-          content: 'I\'m sorry, something went wrong. Please try again.',
+          content: "I'm sorry, something went wrong. Please try again.",
           sources: [],
           timestamp: new Date(),
         },
@@ -83,47 +89,18 @@ export default function AiTutorPage() {
     } finally {
       setIsLoading(false)
     }
-  }, [input, isLoading])
-
-  const handleVoiceTranscript = useCallback((transcript: string) => {
-    setInput(transcript)
-    // Mark as voice message and send
-    const userMessage: AiMessage = {
-      role: 'user',
-      content: transcript,
-      sources: [],
-      isVoice: true,
-      timestamp: new Date(),
-    }
-    setMessages(prev => [...prev, userMessage])
-    setIsLoading(true)
-
-    chatWithTutor(transcript).then(response => {
-      setMessages(prev => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: response.answer,
-          sources: response.sources,
-          imageUrl: response.imageUrl,
-          followUps: response.followUps,
-          timestamp: new Date(),
-        },
-      ])
-    }).catch(() => {
-      setMessages(prev => [
-        ...prev,
-        {
-          role: 'assistant',
-          content: 'I\'m sorry, something went wrong. Please try again.',
-          sources: [],
-        },
-      ])
-    }).finally(() => {
-      setIsLoading(false)
-      setInput('')
-    })
   }, [])
+
+  // Called by send button or Enter key — reads latest input from ref
+  const handleSend = useCallback((overrideQuery?: string) => {
+    const query = overrideQuery ?? inputRef.current
+    return sendQuery(query, false)
+  }, [sendQuery])
+
+  // Called by VoiceInput when speech is recognized
+  const handleVoiceTranscript = useCallback((transcript: string) => {
+    return sendQuery(transcript, true)
+  }, [sendQuery])
 
   const handleFollowUp = useCallback((text: string) => {
     setInput(text)
