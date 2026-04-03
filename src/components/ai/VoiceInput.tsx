@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils'
 
 interface VoiceInputProps {
   onTranscript: (text: string) => void
+  onInterimTranscript?: (text: string) => void
   disabled?: boolean
 }
 
@@ -16,7 +17,7 @@ declare global {
   }
 }
 
-export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
+export function VoiceInput({ onTranscript, onInterimTranscript, disabled }: VoiceInputProps) {
   const [state, setState] = useState<'idle' | 'listening' | 'unsupported'>('idle')
   const recognitionRef = useRef<SpeechRecognition | null>(null)
 
@@ -28,28 +29,66 @@ export function VoiceInput({ onTranscript, disabled }: VoiceInputProps) {
     }
     const recognition = new SR()
     recognition.lang = 'en-US'
-    recognition.interimResults = false
+    recognition.interimResults = true
     recognition.maxAlternatives = 1
-    recognition.continuous = false
+    recognition.continuous = true
 
-    recognition.onresult = (e: SpeechRecognitionEvent) => {
-      const transcript = e.results[0][0].transcript
-      onTranscript(transcript)
+    let currentTranscript = ''
+
+    recognition.onstart = () => {
+      currentTranscript = ''
+    }
+
+    recognition.onresult = (e: any) => {
+      let interimTranscript = ''
+      for (let i = e.resultIndex; i < e.results.length; ++i) {
+        if (e.results[i].isFinal) {
+          currentTranscript += e.results[i][0].transcript + ' '
+        } else {
+          interimTranscript += e.results[i][0].transcript
+        }
+      }
+      const fullText = currentTranscript + interimTranscript
+      if (onInterimTranscript && fullText.trim()) {
+        onInterimTranscript(fullText.trim())
+      }
+    }
+
+    recognition.onerror = (e: any) => {
+      console.error('Speech recognition error:', e.error)
       setState('idle')
     }
-    recognition.onerror = () => setState('idle')
-    recognition.onend = () => setState('idle')
+
+    recognition.onend = () => {
+      const finalTranscript = currentTranscript.trim()
+      if (finalTranscript) {
+        onTranscript(finalTranscript)
+      }
+      currentTranscript = ''
+      setState('idle')
+    }
+
     recognitionRef.current = recognition
-  }, [onTranscript])
+  }, [onTranscript, onInterimTranscript])
 
   const toggle = () => {
     if (disabled) return
     if (state === 'listening') {
-      recognitionRef.current?.stop()
+      try {
+        recognitionRef.current?.stop()
+      } catch (e) {
+        console.error(e)
+      }
       setState('idle')
     } else {
-      recognitionRef.current?.start()
-      setState('listening')
+      try {
+        recognitionRef.current?.start()
+        setState('listening')
+      } catch (e) {
+        console.error(e)
+        // If it fails to start, we ensure we don't stay in the listening state
+        setState('idle')
+      }
     }
   }
 
