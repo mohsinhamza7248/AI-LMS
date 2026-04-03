@@ -85,6 +85,10 @@ export default function AiTutorPage() {
     }
   }, [input, isLoading])
 
+  const handleInterimTranscript = useCallback((text: string) => {
+    setInput(text)
+  }, [])
+
   const handleVoiceTranscript = useCallback((transcript: string) => {
     setInput(transcript)
     // Mark as voice message and send
@@ -270,7 +274,11 @@ export default function AiTutorPage() {
               {/* Action buttons */}
               <div className="absolute right-3 bottom-3 flex items-center gap-1.5">
                 {/* Voice button */}
-                <VoiceInput onTranscript={handleVoiceTranscript} disabled={isLoading} />
+                <VoiceInput 
+                  onTranscript={handleVoiceTranscript} 
+                  onInterimTranscript={handleInterimTranscript}
+                  disabled={isLoading} 
+                />
 
                 {/* Divider */}
                 <div className="h-4 w-px bg-border/60" />
